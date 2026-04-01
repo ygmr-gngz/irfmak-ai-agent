@@ -1,3 +1,6 @@
+const { raw } = require("express");
+const { addErrorMessage } = require("openai/_vendor/zod-to-json-schema/errorMessages.mjs");
+
 (function () {
   if (window.__IRFMAK_WIDGET_LOADED__) return;
   window.__IRFMAK_WIDGET_LOADED__ = true;
@@ -429,72 +432,84 @@
   }
 
   async function sendMessage(message) {
-    if (!message || isSending) return;
+  if (!message || isSending) return;
 
-    isSending = true;
-    addMessage(message, "user");
+  isSending = true;
+  addMessage(message, "user");
 
-    const typingMessage = addMessage("Yazıyor...", "bot");
-    messageInput.value = "";
-    messageInput.disabled = true;
+  const typingMessage = addMessage("Yazıyor...", "bot");
 
-    const submitButton = chatForm.querySelector('button[type="submit"]');
-    if (submitButton) {
-      submitButton.disabled = true;
-    }
+  messageInput.value = "";
+  messageInput.disabled = true;
 
+  const submitButton = chatForm.querySelector('button[type="submit"]');
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    const response = await fetch(API_BASE + "/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: message,
+        sessionId: sessionId
+      })
+    });
+
+    const rawText = await response.text();
+    console.log("CHAT RAW RESPONSE:", rawText);
+
+    let data = {};
     try {
-      const API_BASE ="https://brave-compassion-production.up.railway.app";
-      const response = await fetch(API_BASE + "/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: message,
-          sessionId: sessionId
-        })
-      });
-
-      const data = await response.json();
-
-      if (typingMessage && typingMessage.parentNode) {
-        typingMessage.parentNode.removeChild(typingMessage);
-      }
-
-      if (data.sessionId) {
-        sessionId = data.sessionId;
-        localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-      }
-
-      if (response.ok && data.reply) {
-        addMessage(data.reply, "bot", {
-          showWhatsappButton: !!data.showWhatsappButton,
-          whatsappLink: data.whatsappLink || null
-        });
-      } else {
-        addMessage(data.error || "Bir hata oluştu.", "bot");
-      }
-    } catch (error) {
-      if (typingMessage && typingMessage.parentNode) {
-        typingMessage.parentNode.removeChild(typingMessage);
-      }
-
-      addMessage("Sunucuya bağlanırken hata oluştu.", "bot");
-      console.error("Widget chat error:", error);
-    } finally {
-      isSending = false;
-      messageInput.disabled = false;
-
-      if (submitButton) {
-        submitButton.disabled = false;
-      }
-
-      messageInput.focus();
-      scrollChatToBottom();
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch (e) {
+      throw new Error("Sunucu JSON dönmedi: " + rawText);
     }
-  }
 
+    if (!response.ok) {
+      throw new Error(data.error || "HTTP " + response.status);
+    }
+
+    if (typingMessage && typingMessage.parentNode) {
+      typingMessage.parentNode.removeChild(typingMessage);
+    }
+
+    if (data.sessionId) {
+      sessionId = data.sessionId;
+      localStorage.setItem("irfmak_session_id", sessionId);
+    }
+
+    if (data.reply) {
+      addMessage(data.reply, "bot", {
+        showWhatsappButton: !!data.showWhatsappButton,
+        whatsappLink: data.whatsappLink || null
+      });
+    } else {
+      addMessage("Boş cevap geldi", "bot");
+    }
+
+  } catch (error) {
+    console.error("CHAT HATASI:", error);
+
+    if (typingMessage && typingMessage.parentNode) {
+      typingMessage.parentNode.removeChild(typingMessage);
+    }
+
+    addMessage("HATA: " + error.message, "bot");
+
+  } finally {
+    isSending = false;
+    messageInput.disabled = false;
+
+    if (submitButton) {
+      submitButton.disabled = false;
+    }
+
+    messageInput.focus();
+    scrollChatToBottom();
+  }
+}
   async function submitCurrentMessage() {
     const message = messageInput.value.trim();
     if (!message) return;
