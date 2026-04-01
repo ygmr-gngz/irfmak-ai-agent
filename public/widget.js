@@ -443,7 +443,7 @@
     if (submitButton) submitButton.disabled = true;
 
     try {
-      const response = await fetch(API_BASE + "/chat", {
+      const response = await fetch(API_BASE + "/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
