@@ -197,7 +197,7 @@ if (chatForm) {
     const typingMessage = chatBox.lastChild;
 
     try {
-      const response = await fetch("/chat", {
+      const response = await fetch("https://brave-compassion-production.up.railway.app/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
