@@ -906,20 +906,23 @@ app.get("/widget-page", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "widget-page.html"));
 });
 
+const Port = Number(process.env.PORT) || 8080;
+
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
-    port: PORT,
+    port: Port,
     time: nowIso(),
   });
 });
+
 
 (async () => {
   try {
     await initDb();
 
-    app.listen(PORT, () => {
-      console.log(`🚀 IRFMAK AI çalışıyor: http://localhost:${PORT}`);
+    app.listen(Port, () => {
+      console.log(`🚀 IRFMAK AI çalışıyor: http://localhost:${Port}`);
     });
   } catch (error) {
     console.error("Veritabanı başlatılamadı:", error);
