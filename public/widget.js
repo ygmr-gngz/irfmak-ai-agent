@@ -2,7 +2,7 @@
   if (window.__IRFMAK_WIDGET_LOADED__) return;
   window.__IRFMAK_WIDGET_LOADED__ = true;
 
-  const API_BASE = (window.IRFMAK_AI_API || window.location.origin).replace(/\/$/, "");
+  const API_BASE = ("https://brave-compassion-production.up.railway.app");
   const SESSION_STORAGE_KEY = "irfmak_widget_session_id";
 
   let sessionId = localStorage.getItem(SESSION_STORAGE_KEY) || null;
