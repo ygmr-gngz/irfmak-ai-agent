@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İrfmak AI Asistan</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="welcome-card" class="welcome-card">
+    <button id="welcome-close" class="welcome-close" type="button">×</button>
+    <div class="welcome-title">İrfmak AI Robotu 🤖</div>
+    <div class="welcome-text">
+      Merhaba, ben İrfmak Yapay Zeka Robotuyum. Size ürün, servis ve satış konularında yardımcı olabilirim.
+    </div>
+    <button id="open-chat-btn" class="welcome-open-btn" type="button">
+      Sohbeti Başlat
+    </button>
+  </div>
+
+  <button id="chat-bubble" class="chat-bubble" type="button" aria-label="Sohbeti aç">
+    <img
+      src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png"
+      alt="Robot"
+    />
+  </button>
+
+  <div id="chat-panel" class="chat-panel hidden">
+    <div class="chat-header">
+      <div>
+        <div class="chat-header-title">İrfmak AI Asistan</div>
+        <div class="chat-header-subtitle">Satın alma, teknik servis ve ürün danışmanı.</div>
+      </div>
+      <button id="chat-close" class="chat-close" type="button">×</button>
+    </div>
+
+    <div id="chat-box" class="chat-box"></div>
+
+    <form id="chat-form" class="chat-form">
+      <input
+        id="message-input"
+        type="text"
+        placeholder="Mesajınızı yazın..."
+        autocomplete="off"
+      />
+      <button type="submit">Gönder</button>
+    </form>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

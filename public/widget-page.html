@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İrfmak Chat Widget</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    #welcome-card,
+    #chat-bubble {
+      display: none !important;
+    }
+
+    .chat-panel {
+      position: static !important;
+      width: 100% !important;
+      height: 100% !important;
+      right: auto !important;
+      bottom: auto !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      display: flex !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="welcome-card" class="hidden"></div>
+
+  <button id="chat-bubble" class="hidden" type="button"></button>
+
+  <div id="chat-panel" class="chat-panel">
+    <div class="chat-header">
+      <div>
+        <div class="chat-header-title">İrfmak AI Asistan</div>
+        <div class="chat-header-subtitle">Satın alma, teknik servis ve ürün danışmanı.</div>
+      </div>
+      <button id="chat-close" class="chat-close hidden" type="button">×</button>
+    </div>
+
+    <div id="chat-box" class="chat-box"></div>
+
+    <form id="chat-form" class="chat-form">
+      <input
+        id="message-input"
+        type="text"
+        placeholder="Mesajınızı yazın..."
+        autocomplete="off"
+      />
+      <button type="submit">Gönder</button>
+    </form>
+  </div>
+
+  <button id="open-chat-btn" class="hidden" type="button"></button>
+  <button id="welcome-close" class="hidden" type="button"></button>
+
+  <script src="/app.js"></script>
+</body>
+</html>

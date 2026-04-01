@@ -1,0 +1,12 @@
+node_modules/
+.env
+data/*.db
+data/*.sqlite
+data/*.irfmak.db
+AppData/
+cache/
+vscode/
+.log/
+Thumbs.db
+npm-debug.log*
+.DS_Store
