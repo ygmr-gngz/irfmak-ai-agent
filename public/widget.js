@@ -445,7 +445,7 @@
 
     try {
       const API_BASE ="https://brave-compassion-production.up.railway.app";
-      const response = await fetch(API_BASE + "/api/chat", {
+      const response = await fetch(API_BASE + "//chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
