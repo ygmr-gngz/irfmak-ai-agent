@@ -563,10 +563,3 @@ app.get("/health", (req, res) => res.json({ ok: true, port: PORT, time: nowIso()
     process.exit(1);
   }
 })();
-```
-
-Bunu index.js'e yapıştırın, sonra:
-```
-git add index.js
-git commit -m "fix: katalog disindaki urunler ve stok kontrolu guncellendi"
-git push origin main
