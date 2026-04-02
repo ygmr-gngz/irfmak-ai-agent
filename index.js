@@ -232,7 +232,7 @@ async function dbUrunTalebiKaydet({ oturumKodu, urunAdi, kategori, makineTipi })
 
 /* CHAT */
 
-app.post("/chat", async (req, res) => {
+app.post("/api/chat", async (req, res) => {
   try {
     const message = String(req.body.message || "").trim();
     const incomingSessionId = req.body.sessionId || null;
