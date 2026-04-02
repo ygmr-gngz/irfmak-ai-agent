@@ -167,12 +167,6 @@ function productMatchesType(product, requestedTypes) {
 
 function recommendProducts(message) {
   const requestedTypes = detectMachineTypes(message);
-  let filtered = PRODUCT_CATALOG.filter((p) => p.inStock && productMatchesType(p, requestedTypes));
-  if (!filtered.length) filtered = PRODUCT_CATALOG.filter((p) => p.inStock);
-  return filtered.slice(0, 5);
-}
-function recommendProducts(message) {
-  const requestedTypes = detectMachineTypes(message);
   
   let filtered = requestedTypes.length > 0
     ? PRODUCT_CATALOG.filter((p) => p.inStock && productMatchesType(p, requestedTypes))
@@ -183,6 +177,18 @@ function recommendProducts(message) {
   }
 
   return filtered.slice(0, 5);
+}
+
+function buildProductHint(message) {
+  const products = recommendProducts(message);
+  const fallback = products.length
+    ? products
+    : PRODUCT_CATALOG.filter(p => p.inStock);
+
+  return fallback
+    .slice(0, 8)
+    .map((p, i) => `${i + 1}. ${p.title} - ${p.priceText} - ${p.url}`)
+    .join("\n");
 }
 
 /* SQLITE HELPERS */
