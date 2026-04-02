@@ -157,7 +157,7 @@
     <div id="irfmak-chat-panel" class="chat-panel hidden">
       <div class="chat-header">
         <div>
-          <div class="chat-header-title">İrfmak AI Asistan</div>
+          <div class="chat-header-title">İrfmak Asistan</div>
           <div class="chat-header-subtitle">Satın alma, teknik servis ve ürün danışmanı.</div>
         </div>
         <button id="irfmak-chat-close" class="chat-close" type="button">×</button>
@@ -248,12 +248,15 @@
     wrapper.classList.add("quick-buttons");
 
     const buttons = [
-      "Ev tipi dikiş makinesi öner",
-      "Sanayi tipi makine arıyorum",
-      "Yedek parça lazım",
-      "Ödeme sayfasına yönlendir",
+      "Singer ev tipi dikiş makinesi öner",
+      "Pfaff ev tipi dikiş makinesi öner",
+      "Singer sanayi tipi makine öner",
+      "Pfaff sanayi tipi makine öner",
+      "Singer overlok makinesi öner",
+      "Pfaff overlok makinesi öner",
       "Yetkiliyle görüşmek istiyorum"
     ];
+    
 
     buttons.forEach(function (label) {
       const button = document.createElement("button");
