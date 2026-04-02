@@ -21,18 +21,14 @@ if (!process.env.OPENAI_API_KEY) {
   process.exit(1);
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const DATA_DIR = path.join(__dirname, "data");
 const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
 const HANDOFFS_FILE = path.join(DATA_DIR, "handoffs.json");
 const LEADS_FILE = path.join(DATA_DIR, "leads.json");
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 function ensureJsonFile(filePath, fallbackValue) {
   if (!fs.existsSync(filePath)) {
@@ -57,9 +53,7 @@ function writeJson(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 }
 
-function nowIso() {
-  return new Date().toISOString();
-}
+function nowIso() { return new Date().toISOString(); }
 
 function safeText(value) {
   if (value === undefined || value === null || value === "") return null;
@@ -70,46 +64,25 @@ function normalizeText(text) {
   return String(text || "").toLocaleLowerCase("tr-TR");
 }
 
-function getSessions() {
-  return readJson(SESSIONS_FILE, {});
-}
-
-function getHandoffs() {
-  return readJson(HANDOFFS_FILE, []);
-}
-
-function getLeads() {
-  return readJson(LEADS_FILE, []);
-}
-
-function saveSessions(data) {
-  writeJson(SESSIONS_FILE, data);
-}
-
-function saveHandoffs(data) {
-  writeJson(HANDOFFS_FILE, data);
-}
-
-function saveLeads(data) {
-  writeJson(LEADS_FILE, data);
-}
+function getSessions() { return readJson(SESSIONS_FILE, {}); }
+function getHandoffs() { return readJson(HANDOFFS_FILE, []); }
+function getLeads() { return readJson(LEADS_FILE, []); }
+function saveSessions(data) { writeJson(SESSIONS_FILE, data); }
+function saveHandoffs(data) { writeJson(HANDOFFS_FILE, data); }
+function saveLeads(data) { writeJson(LEADS_FILE, data); }
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .map((v) => v.trim())
-  .filter(Boolean);
+  .split(",").map((v) => v.trim()).filter(Boolean);
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (!allowedOrigins.length) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(null, true);
-    },
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (!allowedOrigins.length) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, true);
+  },
+  credentials: true,
+}));
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -133,89 +106,52 @@ function buildWhatsappLink(prefillText = "Merhaba") {
 
 function getOrCreateSession(sessionId) {
   const sessions = getSessions();
-
   if (!sessionId || !sessions[sessionId]) {
     const newId = crypto.randomUUID();
     sessions[newId] = {
       messages: [],
       createdAt: nowIso(),
       updatedAt: nowIso(),
-      state: {
-        customerName: null,
-        customerPhone: null,
-      },
+      state: { customerName: null, customerPhone: null },
     };
     saveSessions(sessions);
     return { id: newId, session: sessions[newId], sessions };
   }
-
   return { id: sessionId, session: sessions[sessionId], sessions };
 }
 
 function detectIntent(message) {
   const text = normalizeText(message);
-
-  if (
-    text.includes("yetkili") ||
-    text.includes("temsilci") ||
-    text.includes("görüşmek istiyorum") ||
-    text.includes("sizi arayın")
-  ) {
-    return "yetkili";
-  }
-
-  if (
-    text.includes("toplu") ||
-    text.includes("toptan") ||
-    /\b\d+\s*(adet|tane)\b/.test(text)
-  ) {
-    return "toplu_satis";
-  }
-
+  if (text.includes("yetkili") || text.includes("temsilci") || text.includes("görüşmek istiyorum") || text.includes("sizi arayın")) return "yetkili";
+  if (text.includes("toplu") || text.includes("toptan") || /\b\d+\s*(adet|tane)\b/.test(text)) return "toplu_satis";
   if (text.includes("teklif")) return "teklif";
   if (text.includes("servis")) return "servis";
   if (text.includes("arıza") || text.includes("ariza") || text.includes("teknik")) return "teknik";
-
   return "urun";
 }
 
 function detectMachineTypes(message) {
   const text = normalizeText(message);
   const found = [];
-
-  if (text.includes("ev tipi")) found.push("ev_tipi");
+  if (text.includes("ev tipi") || text.includes("ev için") || text.includes("evde")) found.push("ev_tipi");
   if (text.includes("sanayi")) found.push("sanayi_genel");
-  if (text.includes("overlok")) found.push("overlok");
+  if (text.includes("overlok") || text.includes("overlock")) found.push("overlok");
   if (text.includes("reçme") || text.includes("recme")) found.push("recme");
   if (text.includes("zigzag")) found.push("zigzag");
   if (text.includes("çift iğne") || text.includes("cift iğne")) found.push("cift_igne");
   if (text.includes("düz dikiş") || text.includes("duz dikis")) found.push("duz_dikis");
   if (text.includes("kesim")) found.push("kesim");
-  if (
-    text.includes("parça") ||
-    text.includes("yedek parça") ||
-    text.includes("iğne") ||
-    text.includes("ayak")
-  ) {
-    found.push("parca");
-  }
-
+  if (text.includes("ütü") || text.includes("utu")) found.push("utu");
+  if (text.includes("parça") || text.includes("yedek parça") || text.includes("iğne") || text.includes("ayak")) found.push("parca");
   return [...new Set(found)];
 }
 
 function productMatchesType(product, requestedTypes) {
   if (!requestedTypes || requestedTypes.length === 0) return true;
-
   for (const t of requestedTypes) {
     if (t === "sanayi_genel") {
-      if (
-        String(product.category || "").startsWith("sanayi_") ||
-        ["overlok", "recme", "zigzag", "cift_igne", "duz_dikis"].includes(product.machineType)
-      ) {
-        return true;
-      }
+      if (String(product.category || "").startsWith("sanayi_") || ["overlok", "recme", "zigzag", "cift_igne", "duz_dikis"].includes(product.machineType)) return true;
     }
-
     if (t === "ev_tipi" && product.machineType === "ev_tipi") return true;
     if (t === "overlok" && product.machineType === "overlok") return true;
     if (t === "recme" && product.machineType === "recme") return true;
@@ -223,29 +159,24 @@ function productMatchesType(product, requestedTypes) {
     if (t === "cift_igne" && product.machineType === "cift_igne") return true;
     if (t === "duz_dikis" && product.machineType === "duz_dikis") return true;
     if (t === "kesim" && product.machineType === "kesim") return true;
+    if (t === "utu" && product.machineType === "utu") return true;
     if (t === "parca" && (product.machineType === "parca" || product.machineType === "igne")) return true;
   }
-
   return false;
 }
 
 function recommendProducts(message) {
   const requestedTypes = detectMachineTypes(message);
-  let filtered = PRODUCT_CATALOG.filter((p) => productMatchesType(p, requestedTypes));
-
-  if (!filtered.length) {
-    filtered = PRODUCT_CATALOG;
-  }
-
+  let filtered = PRODUCT_CATALOG.filter((p) => p.inStock && productMatchesType(p, requestedTypes));
+  if (!filtered.length) filtered = PRODUCT_CATALOG.filter((p) => p.inStock);
   return filtered.slice(0, 5);
 }
 
 function buildProductHint(message) {
   const products = recommendProducts(message);
-  if (!products.length) return "Uygun ürün ipucu bulunamadı.";
-
+  if (!products.length) return "Bu kategoride stokta ürün bulunmuyor.";
   return products
-    .map((p, i) => `${i + 1}. ${p.title} - ${p.priceText}`)
+    .map((p, i) => `${i + 1}. ${p.title} - ${p.priceText} - ${p.url}`)
     .join("\n");
 }
 
@@ -254,192 +185,88 @@ function buildProductHint(message) {
 async function dbOturumOlusturVeyaGuncelle(oturumKodu) {
   const db = await getDb();
   const now = nowIso();
-
-  const mevcut = await db.get(
-    `SELECT id FROM sohbet_oturumlari WHERE oturum_kodu = ?`,
-    [oturumKodu]
-  );
-
+  const mevcut = await db.get(`SELECT id FROM sohbet_oturumlari WHERE oturum_kodu = ?`, [oturumKodu]);
   if (mevcut) {
-    await db.run(
-      `UPDATE sohbet_oturumlari
-       SET guncellenme_tarihi = ?
-       WHERE oturum_kodu = ?`,
-      [now, oturumKodu]
-    );
+    await db.run(`UPDATE sohbet_oturumlari SET guncellenme_tarihi = ? WHERE oturum_kodu = ?`, [now, oturumKodu]);
     return mevcut.id;
   }
-
   const result = await db.run(
-    `INSERT INTO sohbet_oturumlari (
-      oturum_kodu,
-      olusturulma_tarihi,
-      guncellenme_tarihi,
-      durum
-    ) VALUES (?, ?, ?, ?)`,
+    `INSERT INTO sohbet_oturumlari (oturum_kodu, olusturulma_tarihi, guncellenme_tarihi, durum) VALUES (?, ?, ?, ?)`,
     [oturumKodu, now, now, "aktif"]
   );
-
   return result.lastID;
 }
 
 async function dbMesajKaydet(oturumKodu, gonderenTipi, mesaj) {
   const db = await getDb();
   const oturumId = await dbOturumOlusturVeyaGuncelle(oturumKodu);
-
   await db.run(
-    `INSERT INTO sohbet_mesajlari (
-      oturum_id,
-      gonderen_tipi,
-      mesaj,
-      tarih
-    ) VALUES (?, ?, ?, ?)`,
+    `INSERT INTO sohbet_mesajlari (oturum_id, gonderen_tipi, mesaj, tarih) VALUES (?, ?, ?, ?)`,
     [oturumId, gonderenTipi, mesaj, nowIso()]
   );
 }
 
-async function dbMusteriTalebiKaydet({
-  oturumKodu,
-  musteriAdi,
-  musteriTelefonu,
-  talepTuru,
-  talepEtiketi,
-  aciklama,
-  durum = "yeni",
-}) {
+async function dbMusteriTalebiKaydet({ oturumKodu, musteriAdi, musteriTelefonu, talepTuru, talepEtiketi, aciklama, durum = "yeni" }) {
   const db = await getDb();
-
   await db.run(
-    `INSERT INTO musteri_talepleri (
-      oturum_kodu,
-      musteri_adi,
-      musteri_telefonu,
-      talep_turu,
-      talep_etiketi,
-      aciklama,
-      durum,
-      olusturulma_tarihi
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      oturumKodu,
-      safeText(musteriAdi),
-      safeText(musteriTelefonu),
-      safeText(talepTuru),
-      safeText(talepEtiketi),
-      safeText(aciklama),
-      durum,
-      nowIso(),
-    ]
+    `INSERT INTO musteri_talepleri (oturum_kodu, musteri_adi, musteri_telefonu, talep_turu, talep_etiketi, aciklama, durum, olusturulma_tarihi) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [oturumKodu, safeText(musteriAdi), safeText(musteriTelefonu), safeText(talepTuru), safeText(talepEtiketi), safeText(aciklama), durum, nowIso()]
   );
 }
 
-async function dbYetkiliYonlendirmeKaydet({
-  oturumKodu,
-  musteriAdi,
-  musteriTelefonu,
-  yonlendirmeNedeni,
-  yonlendirmeEtiketi,
-  ozet,
-  whatsappLinki,
-  tamamlandiMi = 1,
-}) {
+async function dbYetkiliYonlendirmeKaydet({ oturumKodu, musteriAdi, musteriTelefonu, yonlendirmeNedeni, yonlendirmeEtiketi, ozet, whatsappLinki, tamamlandiMi = 1 }) {
   const db = await getDb();
-
   await db.run(
-    `INSERT INTO yetkili_yonlendirmeleri (
-      oturum_kodu,
-      musteri_adi,
-      musteri_telefonu,
-      yonlendirme_nedeni,
-      yonlendirme_etiketi,
-      ozet,
-      whatsapp_linki,
-      tamamlandi_mi,
-      olusturulma_tarihi
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      oturumKodu,
-      safeText(musteriAdi),
-      safeText(musteriTelefonu),
-      safeText(yonlendirmeNedeni),
-      safeText(yonlendirmeEtiketi),
-      safeText(ozet),
-      safeText(whatsappLinki),
-      tamamlandiMi,
-      nowIso(),
-    ]
+    `INSERT INTO yetkili_yonlendirmeleri (oturum_kodu, musteri_adi, musteri_telefonu, yonlendirme_nedeni, yonlendirme_etiketi, ozet, whatsapp_linki, tamamlandi_mi, olusturulma_tarihi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [oturumKodu, safeText(musteriAdi), safeText(musteriTelefonu), safeText(yonlendirmeNedeni), safeText(yonlendirmeEtiketi), safeText(ozet), safeText(whatsappLinki), tamamlandiMi, nowIso()]
   );
 }
 
 async function dbUrunTalebiKaydet({ oturumKodu, urunAdi, kategori, makineTipi }) {
   const db = await getDb();
-
   await db.run(
-    `INSERT INTO urun_talepleri (
-      oturum_kodu,
-      urun_adi,
-      kategori,
-      makine_tipi,
-      talep_tarihi
-    ) VALUES (?, ?, ?, ?, ?)`,
-    [
-      oturumKodu,
-      safeText(urunAdi),
-      safeText(kategori),
-      safeText(makineTipi),
-      nowIso(),
-    ]
+    `INSERT INTO urun_talepleri (oturum_kodu, urun_adi, kategori, makine_tipi, talep_tarihi) VALUES (?, ?, ?, ?, ?)`,
+    [oturumKodu, safeText(urunAdi), safeText(kategori), safeText(makineTipi), nowIso()]
   );
 }
 
 /* CHAT */
-app.post
-("/api/chat", async (req, res) => {
+
+app.post("/chat", async (req, res) => {
   try {
     const message = String(req.body.message || "").trim();
     const incomingSessionId = req.body.sessionId || null;
 
-    if (!message) {
-      return res.status(400).json({ error: "Mesaj gerekli" });
-    }
+    if (!message) return res.status(400).json({ error: "Mesaj gerekli" });
 
     const { id, session, sessions } = getOrCreateSession(incomingSessionId);
 
-    session.messages.push({
-      role: "user",
-      content: message,
-      createdAt: nowIso(),
-    });
+    session.messages.push({ role: "user", content: message, createdAt: nowIso() });
     session.updatedAt = nowIso();
     saveSessions(sessions);
 
     await dbMesajKaydet(id, "kullanici", message);
 
     const intent = detectIntent(message);
-
     let reply = "";
     let showWhatsappButton = false;
     let whatsappLink = null;
+    let productLinks = [];
 
     if (["yetkili", "toplu_satis", "teklif", "servis", "teknik"].includes(intent)) {
       const label = reasonLabel(intent);
 
-      if (intent === "yetkili") {
-        reply = "Elbette. Sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
-      } else if (intent === "toplu_satis") {
-        reply = "Toplu satış talebiniz için en doğru yönlendirme yetkilimiz olacaktır. WhatsApp Business üzerinden devam edebilirsiniz.";
-      } else if (intent === "teklif") {
-        reply = "Teklif talebiniz için sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
-      } else if (intent === "servis") {
-        reply = "Servis talebiniz için sizi yetkiliye yönlendiriyorum. WhatsApp Business üzerinden devam edebilirsiniz.";
-      } else {
-        reply = "Teknik destek için sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
-      }
+      if (intent === "yetkili") reply = "Elbette. Sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
+      else if (intent === "toplu_satis") reply = "Toplu satış talebiniz için en doğru yönlendirme yetkilimiz olacaktır. WhatsApp Business üzerinden devam edebilirsiniz.";
+      else if (intent === "teklif") reply = "Teklif talebiniz için sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
+      else if (intent === "servis") reply = "Servis talebiniz için sizi yetkiliye yönlendiriyorum. WhatsApp Business üzerinden devam edebilirsiniz.";
+      else reply = "Teknik destek için sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
 
       showWhatsappButton = true;
       whatsappLink = buildWhatsappLink(`Merhaba, ${label.toLowerCase()} konusunda görüşmek istiyorum.`);
 
-      const handoffRecord = {
+      const handoffs = getHandoffs();
+      handoffs.push({
         id: crypto.randomUUID(),
         sessionId: id,
         customerName: session.state?.customerName || "Bilinmiyor",
@@ -452,13 +279,11 @@ app.post
         customerWhatsappLink: whatsappLink || "",
         completed: true,
         createdAt: nowIso(),
-      };
-
-      const handoffs = getHandoffs();
-      handoffs.push(handoffRecord);
+      });
       saveHandoffs(handoffs);
 
-      const leadRecord = {
+      const leads = getLeads();
+      leads.push({
         id: crypto.randomUUID(),
         sessionId: id,
         customerName: session.state?.customerName || "Bilinmiyor",
@@ -468,10 +293,7 @@ app.post
         detail: message,
         status: "yeni",
         createdAt: nowIso(),
-      };
-
-      const leads = getLeads();
-      leads.push(leadRecord);
+      });
       saveLeads(leads);
 
       try {
@@ -502,44 +324,41 @@ app.post
       } catch (dbError) {
         console.error("SQLite talep kayıt hatası:", dbError.message);
       }
+
     } else {
       const recommended = recommendProducts(message);
       const productHint = buildProductHint(message);
 
       const systemPrompt = `
-Sen İrfmak sitesinin yapay zeka ürün danışmanısın.
+Sen irfmak.com'un yapay zeka ürün danışmanısın.
+KESİNLİKLE SADECE aşağıdaki listede yer alan ürünleri öner. Bu listenin dışında hiçbir ürün, marka veya model adı söyleme. Jack F4, Juki veya başka markalar katalogda yoksa "elimizde bulunmuyor" de.
+Stokta olmayan ürünleri KESİNLİKLE önerme, sadece stokta olan ürünleri söyle.
+Fiyatları tam olarak söyle, uydurma.
 Kısa, net, samimi ve satış odaklı cevap ver.
-Bilgi uydurma.
 Kullanıcı ürün soruyorsa kullanım amacını anlamaya çalış.
-Singer, ev tipi, sanayi tipi, overlok, reçme, yedek parça, iğne, ayak gibi konularda yardımcı ol.
 Gerçekten gerekli olmadıkça kullanıcıyı yetkiliye yönlendirme.
 
-Elindeki ürün ipuçları:
+Mevcut ürünler (SADECE BUNLAR):
 ${productHint}
 `;
 
       const recentMessages = session.messages
         .slice(-8)
-        .map((m) => ({
-          role: m.role === "assistant" ? "assistant" : "user",
-          content: m.content,
-        }));
+        .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content }));
 
       const completion = await openai.chat.completions.create({
         model: OPENAI_MODEL,
         temperature: 0.6,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          ...recentMessages,
-        ],
+        messages: [{ role: "system", content: systemPrompt }, ...recentMessages],
       });
 
       reply =
         completion.choices?.[0]?.message?.content?.trim() ||
         "Size yardımcı olayım. Kullanım amacınızı ve nasıl bir makine aradığınızı biraz daha detaylandırır mısınız?";
+
+      productLinks = recommended
+        .slice(0, 3)
+        .map((p) => ({ title: p.title, url: p.url, price: p.priceText }));
 
       const leads = getLeads();
       leads.push({
@@ -583,22 +402,14 @@ ${productHint}
       }
     }
 
-    session.messages.push({
-      role: "assistant",
-      content: reply,
-      createdAt: nowIso(),
-    });
+    session.messages.push({ role: "assistant", content: reply, createdAt: nowIso() });
     session.updatedAt = nowIso();
     saveSessions(sessions);
 
     await dbMesajKaydet(id, "asistan", reply);
 
-    return res.json({
-      reply,
-      sessionId: id,
-      showWhatsappButton,
-      whatsappLink,
-    });
+    return res.json({ reply, sessionId: id, showWhatsappButton, whatsappLink, productLinks });
+
   } catch (error) {
     console.error("CHAT ERROR:", error);
     return res.status(500).json({
@@ -612,52 +423,23 @@ ${productHint}
 
 function checkAdmin(req, res, next) {
   const key = req.headers["x-admin-key"];
-  if (!key || key !== ADMIN_KEY) {
-    return res.status(403).json({ error: "Yetkisiz erişim" });
-  }
+  if (!key || key !== ADMIN_KEY) return res.status(403).json({ error: "Yetkisiz erişim" });
   next();
 }
 
-/* SQLITE ADMIN ENDPOINTS */
+/* ADMIN ENDPOINTS */
 
 app.get("/admin/sqlite-dashboard", checkAdmin, async (req, res) => {
   try {
     const db = await getDb();
-
     const oturumSayisi = await db.get(`SELECT COUNT(*) AS adet FROM sohbet_oturumlari`);
     const talepSayisi = await db.get(`SELECT COUNT(*) AS adet FROM musteri_talepleri`);
     const yonlendirmeSayisi = await db.get(`SELECT COUNT(*) AS adet FROM yetkili_yonlendirmeleri`);
     const satisSayisi = await db.get(`SELECT COUNT(*) AS adet FROM satislar`);
-
     const bugun = new Date().toISOString().slice(0, 10);
-
-    const bugunTalep = await db.get(
-      `SELECT COUNT(*) AS adet
-       FROM musteri_talepleri
-       WHERE olusturulma_tarihi LIKE ?`,
-      [`${bugun}%`]
-    );
-
-    const bugunYonlendirme = await db.get(
-      `SELECT COUNT(*) AS adet
-       FROM yetkili_yonlendirmeleri
-       WHERE olusturulma_tarihi LIKE ?`,
-      [`${bugun}%`]
-    );
-
-    const sonYonlendirmeler = await db.all(`
-      SELECT
-        id,
-        musteri_adi AS customerName,
-        musteri_telefonu AS customerPhone,
-        yonlendirme_etiketi AS handoffReasonLabel,
-        ozet AS summary,
-        olusturulma_tarihi AS createdAt
-      FROM yetkili_yonlendirmeleri
-      ORDER BY id DESC
-      LIMIT 5
-    `);
-
+    const bugunTalep = await db.get(`SELECT COUNT(*) AS adet FROM musteri_talepleri WHERE olusturulma_tarihi LIKE ?`, [`${bugun}%`]);
+    const bugunYonlendirme = await db.get(`SELECT COUNT(*) AS adet FROM yetkili_yonlendirmeleri WHERE olusturulma_tarihi LIKE ?`, [`${bugun}%`]);
+    const sonYonlendirmeler = await db.all(`SELECT id, musteri_adi AS customerName, musteri_telefonu AS customerPhone, yonlendirme_etiketi AS handoffReasonLabel, ozet AS summary, olusturulma_tarihi AS createdAt FROM yetkili_yonlendirmeleri ORDER BY id DESC LIMIT 5`);
     res.json({
       totalHandoffs: yonlendirmeSayisi?.adet || 0,
       totalSessions: oturumSayisi?.adet || 0,
@@ -675,21 +457,7 @@ app.get("/admin/sqlite-dashboard", checkAdmin, async (req, res) => {
 app.get("/admin/sqlite-talepler", checkAdmin, async (req, res) => {
   try {
     const db = await getDb();
-
-    const rows = await db.all(`
-      SELECT
-        id,
-        musteri_adi AS customerName,
-        musteri_telefonu AS customerPhone,
-        talep_etiketi AS reasonLabel,
-        aciklama AS detail,
-        durum AS status,
-        olusturulma_tarihi AS createdAt
-      FROM musteri_talepleri
-      ORDER BY id DESC
-      LIMIT 200
-    `);
-
+    const rows = await db.all(`SELECT id, musteri_adi AS customerName, musteri_telefonu AS customerPhone, talep_etiketi AS reasonLabel, aciklama AS detail, durum AS status, olusturulma_tarihi AS createdAt FROM musteri_talepleri ORDER BY id DESC LIMIT 200`);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -699,20 +467,7 @@ app.get("/admin/sqlite-talepler", checkAdmin, async (req, res) => {
 app.get("/admin/sqlite-yonlendirmeler", checkAdmin, async (req, res) => {
   try {
     const db = await getDb();
-
-    const rows = await db.all(`
-      SELECT
-        id,
-        musteri_adi AS customerName,
-        musteri_telefonu AS customerPhone,
-        yonlendirme_etiketi AS handoffReasonLabel,
-        ozet AS summary,
-        olusturulma_tarihi AS createdAt
-      FROM yetkili_yonlendirmeleri
-      ORDER BY id DESC
-      LIMIT 200
-    `);
-
+    const rows = await db.all(`SELECT id, musteri_adi AS customerName, musteri_telefonu AS customerPhone, yonlendirme_etiketi AS handoffReasonLabel, ozet AS summary, olusturulma_tarihi AS createdAt FROM yetkili_yonlendirmeleri ORDER BY id DESC LIMIT 200`);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -722,33 +477,10 @@ app.get("/admin/sqlite-yonlendirmeler", checkAdmin, async (req, res) => {
 app.get("/admin/sqlite-oturumlar", checkAdmin, async (req, res) => {
   try {
     const db = await getDb();
-
-    const oturumlar = await db.all(`
-      SELECT
-        id,
-        oturum_kodu,
-        olusturulma_tarihi,
-        guncellenme_tarihi,
-        durum
-      FROM sohbet_oturumlari
-      ORDER BY id DESC
-      LIMIT 200
-    `);
-
+    const oturumlar = await db.all(`SELECT id, oturum_kodu, olusturulma_tarihi, guncellenme_tarihi, durum FROM sohbet_oturumlari ORDER BY id DESC LIMIT 200`);
     const result = {};
-
     for (const item of oturumlar) {
-      const sonMesaj = await db.get(
-        `
-        SELECT mesaj
-        FROM sohbet_mesajlari
-        WHERE oturum_id = ?
-        ORDER BY id DESC
-        LIMIT 1
-        `,
-        [item.id]
-      );
-
+      const sonMesaj = await db.get(`SELECT mesaj FROM sohbet_mesajlari WHERE oturum_id = ? ORDER BY id DESC LIMIT 1`, [item.id]);
       result[item.oturum_kodu] = {
         createdAt: item.olusturulma_tarihi,
         updatedAt: item.guncellenme_tarihi,
@@ -756,7 +488,6 @@ app.get("/admin/sqlite-oturumlar", checkAdmin, async (req, res) => {
         durum: item.durum,
       };
     }
-
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -767,14 +498,7 @@ app.post("/admin/sqlite-talep-durum-guncelle", checkAdmin, async (req, res) => {
   try {
     const { id, status } = req.body;
     const db = await getDb();
-
-    await db.run(
-      `UPDATE musteri_talepleri
-       SET durum = ?
-       WHERE id = ?`,
-      [status, id]
-    );
-
+    await db.run(`UPDATE musteri_talepleri SET durum = ? WHERE id = ?`, [status, id]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -783,63 +507,19 @@ app.post("/admin/sqlite-talep-durum-guncelle", checkAdmin, async (req, res) => {
 
 app.post("/admin/satis-ekle", checkAdmin, async (req, res) => {
   try {
-    const {
-      musteriAdi,
-      musteriTelefonu,
-      urunAdi,
-      aciklama,
-      tutar,
-      odemeTipi,
-    } = req.body;
-
+    const { musteriAdi, musteriTelefonu, urunAdi, aciklama, tutar, odemeTipi } = req.body;
     const db = await getDb();
-
     const result = await db.run(
-      `INSERT INTO satislar (
-        musteri_adi,
-        musteri_telefonu,
-        urun_adi,
-        aciklama,
-        tutar,
-        odeme_tipi,
-        olusturulma_tarihi
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        musteriAdi || null,
-        musteriTelefonu || null,
-        urunAdi || null,
-        aciklama || null,
-        Number(tutar || 0),
-        odemeTipi || null,
-        nowIso(),
-      ]
+      `INSERT INTO satislar (musteri_adi, musteri_telefonu, urun_adi, aciklama, tutar, odeme_tipi, olusturulma_tarihi) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [musteriAdi || null, musteriTelefonu || null, urunAdi || null, aciklama || null, Number(tutar || 0), odemeTipi || null, nowIso()]
     );
-
     const satisId = result.lastID;
     const makbuzNo = `IRF-${Date.now()}`;
-
     await db.run(
-      `INSERT INTO makbuzlar (
-        satis_id,
-        makbuz_no,
-        makbuz_tarihi,
-        toplam_tutar,
-        notlar
-      ) VALUES (?, ?, ?, ?, ?)`,
-      [
-        satisId,
-        makbuzNo,
-        nowIso(),
-        Number(tutar || 0),
-        "Panel üzerinden oluşturuldu",
-      ]
+      `INSERT INTO makbuzlar (satis_id, makbuz_no, makbuz_tarihi, toplam_tutar, notlar) VALUES (?, ?, ?, ?, ?)`,
+      [satisId, makbuzNo, nowIso(), Number(tutar || 0), "Panel üzerinden oluşturuldu"]
     );
-
-    res.json({
-      success: true,
-      satisId,
-      makbuzNo,
-    });
+    res.json({ success: true, satisId, makbuzNo });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -848,27 +528,7 @@ app.post("/admin/satis-ekle", checkAdmin, async (req, res) => {
 app.get("/admin/satislar", checkAdmin, async (req, res) => {
   try {
     const db = await getDb();
-
-    const rows = await db.all(`
-      SELECT
-        s.id,
-        s.musteri_adi,
-        s.musteri_telefonu,
-        s.urun_adi,
-        s.aciklama,
-        s.tutar,
-        s.para_birimi,
-        s.odeme_tipi,
-        s.durum,
-        s.olusturulma_tarihi,
-        m.makbuz_no,
-        m.makbuz_tarihi
-      FROM satislar s
-      LEFT JOIN makbuzlar m ON m.satis_id = s.id
-      ORDER BY s.id DESC
-      LIMIT 200
-    `);
-
+    const rows = await db.all(`SELECT s.id, s.musteri_adi, s.musteri_telefonu, s.urun_adi, s.aciklama, s.tutar, s.para_birimi, s.odeme_tipi, s.durum, s.olusturulma_tarihi, m.makbuz_no, m.makbuz_tarihi FROM satislar s LEFT JOIN makbuzlar m ON m.satis_id = s.id ORDER BY s.id DESC LIMIT 200`);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -878,14 +538,7 @@ app.get("/admin/satislar", checkAdmin, async (req, res) => {
 app.get("/admin/sqlite-debug", checkAdmin, async (req, res) => {
   try {
     const db = await getDb();
-
-    const tablolar = await db.all(`
-      SELECT name
-      FROM sqlite_master
-      WHERE type = 'table'
-      ORDER BY name
-    `);
-
+    const tablolar = await db.all(`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`);
     res.json({ tamam: true, tablolar });
   } catch (error) {
     res.status(500).json({ tamam: false, error: error.message });
@@ -894,38 +547,26 @@ app.get("/admin/sqlite-debug", checkAdmin, async (req, res) => {
 
 /* SAYFALAR */
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
-
-app.get("/widget-page", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "widget-page.html"));
-});
-
-const Port = Number(process.env.PORT) || 8080;
-
-app.get("/health", (req, res) => {
-  res.json({
-    ok: true,
-    port: Port,
-    time: nowIso(),
-  });
-});
-
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
+app.get("/widget-page", (req, res) => res.sendFile(path.join(__dirname, "public", "widget-page.html")));
+app.get("/health", (req, res) => res.json({ ok: true, port: PORT, time: nowIso() }));
 
 (async () => {
   try {
     await initDb();
-
-    app.listen(Port, () => {
-      console.log(`🚀 IRFMAK AI çalışıyor: http://localhost:${Port}`);
+    app.listen(PORT, () => {
+      console.log(`🚀 IRFMAK AI çalışıyor: http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error("Veritabanı başlatılamadı:", error);
     process.exit(1);
   }
 })();
+```
+
+Bunu index.js'e yapıştırın, sonra:
+```
+git add index.js
+git commit -m "fix: katalog disindaki urunler ve stok kontrolu guncellendi"
+git push origin main
