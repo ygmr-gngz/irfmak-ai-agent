@@ -171,13 +171,18 @@ function recommendProducts(message) {
   if (!filtered.length) filtered = PRODUCT_CATALOG.filter((p) => p.inStock);
   return filtered.slice(0, 5);
 }
+function recommendProducts(message) {
+  const requestedTypes = detectMachineTypes(message);
+  
+  let filtered = requestedTypes.length > 0
+    ? PRODUCT_CATALOG.filter((p) => p.inStock && productMatchesType(p, requestedTypes))
+    : PRODUCT_CATALOG.filter((p) => p.inStock);
 
-function buildProductHint(message) {
-  const products = recommendProducts(message);
-  if (!products.length) return "Bu kategoride stokta ürün bulunmuyor.";
-  return products
-    .map((p, i) => `${i + 1}. ${p.title} - ${p.priceText} - ${p.url}`)
-    .join("\n");
+  if (!filtered.length) {
+    filtered = PRODUCT_CATALOG.filter((p) => p.inStock);
+  }
+
+  return filtered.slice(0, 5);
 }
 
 /* SQLITE HELPERS */
