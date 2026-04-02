@@ -146,8 +146,8 @@
   root.innerHTML = `
     <div id="irfmak-welcome-card" class="welcome-card">
       <button id="irfmak-welcome-close" class="welcome-close" type="button">×</button>
-      <div class="welcome-title">İrfmak AI Robotu 🤖</div>
-      <div class="welcome-text">Merhaba, ben İrfmak Yapay Zeka Robotuyum, size yardımcı olabilir miyim?</div>
+      <div class="welcome-title">İrfmak Asistan 🤖</div>
+      <div class="welcome-text">Merhaba, ben İrfmak Yapay Zeka Asistanıyım, size yardımcı olabilir miyim?</div>
       <button id="irfmak-open-chat-btn" class="welcome-open-btn" type="button">Sohbeti Başlat</button>
     </div>
     <button id="irfmak-chat-bubble" class="chat-bubble" type="button" aria-label="Sohbeti aç">
