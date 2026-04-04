@@ -251,7 +251,6 @@
       "Singer ev tipi dikiş makinesi öner",
       "Pfaff ev tipi dikiş makinesi öner",
       "Singer sanayi tipi makine öner",
-      "Pfaff sanayi tipi makine öner",
       "Singer overlok makinesi öner",
       "Pfaff overlok makinesi öner",
       "Yetkiliyle görüşmek istiyorum"
