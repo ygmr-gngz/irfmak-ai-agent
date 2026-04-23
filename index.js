@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const OpenAI = require("openai");
 const { initDb, getDb } = require("./db");
 const { PRODUCT_CATALOG } = require("./productCatalog");
+const supabase = require("./supabase");
 
 const app = express();
 
@@ -479,6 +480,14 @@ ${productHint}
 
     await dbMesajKaydet(id, "asistan", reply);
 
+    supabase.from("conversations").insert({
+      session_id: id,
+      user_msg: message,
+      bot_reply: reply,
+      page_url: req.body.pageUrl || null,
+      ip_address: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+      user_agent: req.headers["user-agent"],
+    }).then(({ error }) => { if (error) console.error("Supabase hata:", error.message); });
     return res.json({ reply, sessionId: id, showWhatsappButton, whatsappLink, productLinks });
 
   } catch (error) {
