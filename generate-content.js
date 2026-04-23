@@ -1,7 +1,8 @@
 require('dotenv').config();
 const { PRODUCT_CATALOG } = require('./productCatalog');
+const OpenAI = require('openai');
 
-const GROQ_KEY = process.env.GROQ_API_KEY;
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -21,22 +22,13 @@ Link: ${product.url}
   "ad_copy": "Meta Ads için kısa reklam metni (1-2 cümle, satışa yönlendiren)"
 }`;
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${GROQ_KEY}`
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7
-    })
+  const completion = await openai.chat.completions.create({
+    model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7
   });
 
-  const data = await res.json();
-  if (!data.choices) throw new Error('Groq hata: ' + JSON.stringify(data));
-  const text = data.choices[0].message.content;
+  const text = completion.choices[0].message.content;
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
