@@ -6,10 +6,26 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-async function generateContent(product) {
-  const prompt = `Sen İrfmak dikiş makinesi mağazasının Instagram içerik uzmanısın.
-Aşağıdaki ürün için içerik üret:
+function getRandomProduct() {
+  const inStock = PRODUCT_CATALOG.filter(p => p.inStock);
+  const evTipi = inStock.filter(p => p.category === 'ev_tipi');
+  const diger = inStock.filter(p => p.category !== 'ev_tipi');
+  const rand = Math.random();
+  const pool = (rand < 0.8 && evTipi.length > 0) ? evTipi : diger;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
+function getImageUrl(product) {
+  const query = encodeURIComponent(`${product.title} sewing machine product photo white background`);
+  return `https://image.pollinations.ai/prompt/${query}?width=1080&height=1080&nologo=true`;
+}
+
+async function generateContent(product) {
+  const isEvTipi = product.category === 'ev_tipi';
+  const prompt = `Sen İrfmak dikiş makinesi mağazasının Instagram içerik uzmanısın.
+Hedef kitle: ${isEvTipi ? 'Evde dikiş yapmayı seven kadınlar, hobiciler' : 'Profesyoneller, atölyeler, sanayi kullanıcıları'}
+
+Aşağıdaki ürün için içerik üret:
 Ürün: ${product.title}
 Fiyat: ${product.priceText}
 Kategori: ${product.category}
@@ -17,7 +33,7 @@ Link: ${product.url}
 
 Şunu üret (JSON formatında, başka hiçbir şey yazma):
 {
-  "caption": "Instagram gönderisi için Türkçe caption (emoji kullan, 3-4 cümle)",
+  "caption": "Instagram gönderisi için Türkçe caption (emoji kullan, 3-4 cümle, hedef kitleye hitap et)",
   "hashtags": "#dikiş #dikişmakinesi gibi 10 adet hashtag",
   "ad_copy": "Meta Ads için kısa reklam metni (1-2 cümle, satışa yönlendiren)"
 }`;
@@ -33,23 +49,15 @@ Link: ${product.url}
   return JSON.parse(clean);
 }
 
-function getRandomProduct() {
-  const inStock = PRODUCT_CATALOG.filter(p => p.inStock);
-  return inStock[Math.floor(Math.random() * inStock.length)];
-}
-
-function getImageUrl(product) {
-  const query = encodeURIComponent(`${product.title} sewing machine product photo white background`);
-  return `https://image.pollinations.ai/prompt/${query}?width=1080&height=1080&nologo=true`;
-}
-
 async function sendTelegram(product, content) {
   const imageUrl = getImageUrl(product);
+  const kategori = product.category === 'ev_tipi' ? '🏠 Ev Tipi' : '🏭 Profesyonel';
   const message = `
 🆕 *YENİ İÇERİK HAZIR*
 
 📦 *Ürün:* ${product.title}
 💰 *Fiyat:* ${product.priceText}
+🏷 *Kategori:* ${kategori}
 
 📝 *Caption:*
 ${content.caption}
@@ -82,6 +90,7 @@ ${content.ad_copy}
 async function main() {
   const product = getRandomProduct();
   console.log('Seçilen ürün:', product.title);
+  console.log('Kategori:', product.category);
 
   const content = await generateContent(product);
   console.log('\n--- CAPTION ---');
