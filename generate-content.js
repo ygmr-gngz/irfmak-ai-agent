@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { PRODUCT_CATALOG } = require('./productCatalog');
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GROQ_KEY = process.env.GROQ_API_KEY;
 
 async function generateContent(product) {
   const prompt = `Sen İrfmak dikiş makinesi mağazasının Instagram içerik uzmanısın.
@@ -19,19 +19,26 @@ Link: ${product.url}
   "ad_copy": "Meta Ads için kısa reklam metni (1-2 cümle, satışa yönlendiren)"
 }`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    }
-  );
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7
+    })
+  });
 
   const data = await res.json();
-  const text = data.candidates[0].content.parts[0].text;
+
+  if (!data.choices) {
+    throw new Error('Groq hata: ' + JSON.stringify(data));
+  }
+
+  const text = data.choices[0].message.content;
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
