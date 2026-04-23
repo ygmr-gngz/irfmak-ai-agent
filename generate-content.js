@@ -2,6 +2,8 @@ require('dotenv').config();
 const { PRODUCT_CATALOG } = require('./productCatalog');
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 async function generateContent(product) {
   const prompt = `Sen İrfmak dikiş makinesi mağazasının Instagram içerik uzmanısın.
@@ -33,11 +35,7 @@ Link: ${product.url}
   });
 
   const data = await res.json();
-
-  if (!data.choices) {
-    throw new Error('Groq hata: ' + JSON.stringify(data));
-  }
-
+  if (!data.choices) throw new Error('Groq hata: ' + JSON.stringify(data));
   const text = data.choices[0].message.content;
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
@@ -53,6 +51,42 @@ function getImageUrl(product) {
   return `https://image.pollinations.ai/prompt/${query}?width=1080&height=1080&nologo=true`;
 }
 
+async function sendTelegram(product, content) {
+  const imageUrl = getImageUrl(product);
+  const message = `
+🆕 *YENİ İÇERİK HAZIR*
+
+📦 *Ürün:* ${product.title}
+💰 *Fiyat:* ${product.priceText}
+
+📝 *Caption:*
+${content.caption}
+
+#️⃣ *Hashtag:*
+${content.hashtags}
+
+📣 *Reklam Metni:*
+${content.ad_copy}
+
+🖼 *Görsel:* ${imageUrl}
+🔗 *Ürün Linki:* ${product.url}
+
+✅ Onaylıyor musun?
+`;
+
+  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: message,
+      parse_mode: 'Markdown'
+    })
+  });
+
+  console.log('Telegram mesajı gönderildi!');
+}
+
 async function main() {
   const product = getRandomProduct();
   console.log('Seçilen ürün:', product.title);
@@ -64,8 +98,8 @@ async function main() {
   console.log(content.hashtags);
   console.log('\n--- REKLAM METNİ ---');
   console.log(content.ad_copy);
-  console.log('\n--- GÖRSEL URL ---');
-  console.log(getImageUrl(product));
+
+  await sendTelegram(product, content);
 }
 
 main().catch(console.error);
