@@ -1,0 +1,52 @@
+{
+  "video": "outputs\\irfmak_youtube_1777741453022.mp4",
+  "mode": "youtube",
+  "title": "Pfaff Makineleri ile Dikişin Gücünü Keşfedin",
+  "youtubeTitle": "Neden Pfaff Tercih Edilmeli?",
+  "youtubeDescription": "Pfaff makineleri, dikiş dünyasında kalitenin simgesi. İrfmak Makina ile doğru makineyi seçin.",
+  "instagramCaption": "Kaliteyi seçin, dikişinizi güçlendirin!",
+  "hashtags": [
+    "#Singer",
+    "#Pfaff",
+    "#DikisMakinesi"
+  ],
+  "scenes": [
+    {
+      "type": "broll",
+      "source": "bg1",
+      "duration": 4,
+      "caption": "Bir hikaye başlar"
+    },
+    {
+      "type": "voice_broll",
+      "source": "bg2",
+      "duration": 7,
+      "caption": "Doğru makine",
+      "voice": "Doğru dikiş makinesi, işinize kalite ve güven katar."
+    },
+    {
+      "type": "broll",
+      "source": "bg3",
+      "duration": 4,
+      "caption": "Hassas işçilik"
+    },
+    {
+      "type": "voice_broll",
+      "source": "bg1",
+      "duration": 7,
+      "caption": "Güvenli seçim",
+      "voice": "İrfmak Makina, Singer ve Pfaff modellerinde doğru seçimi yapmanız için yanınızda."
+    },
+    {
+      "type": "broll",
+      "source": "bg2",
+      "duration": 4,
+      "caption": "Güçlü sonuç"
+    },
+    {
+      "type": "logo",
+      "duration": 2
+    }
+  ],
+  "createdAt": "2026-05-02T17:04:14.904Z"
+}

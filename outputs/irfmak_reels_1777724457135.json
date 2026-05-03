@@ -1,0 +1,58 @@
+{
+  "video": "outputs\\irfmak_reels_1777724457135.mp4",
+  "title": "Pfaff Makine Seçerken Dikkat Edilecekler!",
+  "hook": "Doğru dikiş makinesini seçmek, projelerinizi hayata geçirmenin ilk adımıdır!",
+  "youtubeTitle": "Pfaff Makine Seçerken Dikkat!",
+  "instagramCaption": "Dikiş projelerinizi bir üst seviyeye taşımak için Pfaff makine seçimini öğrenin!",
+  "hashtags": [
+    "#Singer",
+    "#Pfaff",
+    "#DikisMakinesi"
+  ],
+  "scenes": [
+    {
+      "type": "broll",
+      "duration": 4,
+      "source": "bg1",
+      "caption": "Makine seçerken bunu unutma",
+      "motion": "zoom-in"
+    },
+    {
+      "type": "broll",
+      "duration": 5,
+      "source": "bg2",
+      "caption": "İhtiyaçlarınıza uygun özellikleri belirleyin.",
+      "motion": "zoom-in"
+    },
+    {
+      "type": "broll",
+      "duration": 4,
+      "source": "bg3",
+      "caption": "Kullanım kolaylığına dikkat edin.",
+      "motion": "zoom-in"
+    },
+    {
+      "type": "avatar",
+      "text": "Doğru makine, işinizi hızlandırır. Kumaşa göre seçim yapmalısınız."
+    },
+    {
+      "type": "broll",
+      "duration": 5,
+      "source": "bg1",
+      "caption": "Marka ve servis güvencesini kontrol et.",
+      "motion": "zoom-out"
+    },
+    {
+      "type": "broll",
+      "duration": 4,
+      "source": "bg2",
+      "caption": "Fiyat-performans dengesi önemli.",
+      "motion": "zoom-in"
+    },
+    {
+      "type": "logo",
+      "duration": 2
+    }
+  ],
+  "createdAt": "2026-05-02T12:20:59.608Z"
+}

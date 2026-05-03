@@ -49,8 +49,8 @@ async function generateHeygenVideo(script, avatarId, voiceId, options = {}) {
         speed: options.speed || 1.0
       },
       background: {
-        type: 'image',
-        url: backgroundUrl
+        type: 'color',
+        value: '#f5f5f5'
       }
     }
   ];

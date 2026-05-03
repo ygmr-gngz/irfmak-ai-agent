@@ -1,8 +1,13 @@
 require('dotenv').config();
+
 const { google } = require('googleapis');
 const fs = require('fs');
 
-async function uploadVideo(videoPath, title, description, tags) {
+async function uploadVideo(videoPath, title, description, tags = []) {
+  if (!fs.existsSync(videoPath)) {
+    throw new Error(`Video dosyası bulunamadı: ${videoPath}`);
+  }
+
   const auth = new google.auth.OAuth2(
     process.env.YOUTUBE_CLIENT_ID,
     process.env.YOUTUBE_CLIENT_SECRET,
@@ -15,7 +20,7 @@ async function uploadVideo(videoPath, title, description, tags) {
 
   const youtube = google.youtube({ version: 'v3', auth });
 
-  console.log('YouTube\'a yükleniyor...');
+  console.log("YouTube'a yükleniyor:", videoPath);
 
   const res = await youtube.videos.insert({
     part: ['snippet', 'status'],
@@ -25,10 +30,10 @@ async function uploadVideo(videoPath, title, description, tags) {
         description,
         tags,
         categoryId: '26',
-        defaultLanguage: 'tr',
+        defaultLanguage: 'tr'
       },
       status: {
-        privacyStatus: 'public'
+        privacyStatus: process.env.YOUTUBE_PRIVACY || 'private'
       }
     },
     media: {
@@ -37,16 +42,9 @@ async function uploadVideo(videoPath, title, description, tags) {
   });
 
   const videoUrl = `https://www.youtube.com/watch?v=${res.data.id}`;
-  console.log('✅ YouTube\'a yüklendi:', videoUrl);
+  console.log("✅ YouTube'a yüklendi:", videoUrl);
+
   return videoUrl;
 }
 
 module.exports = { uploadVideo };
-
-// Test
-uploadVideo(
-  './tmp/reels_1776948573575.mp4',
-  'Singer Dikiş Makinesi Tanıtım | İrfmak',
-  'İrfmak Makina - Singer ve Pfaff dikiş makineleri yetkili satıcısı. irfmak.com',
-  ['dikiş', 'dikişmakinesi', 'singer', 'irfmak', 'pfaff']
-).then(console.log).catch(console.error);

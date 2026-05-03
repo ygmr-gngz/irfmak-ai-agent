@@ -1,0 +1,58 @@
+{
+  "video": "outputs\\irfmak_youtube_1777735944551.mp4",
+  "mode": "youtube",
+  "title": "Pfaff ile Dikişin Gücünü Keşfedin",
+  "youtubeTitle": "Pfaff Makineleri Neden Daha İyi?",
+  "youtubeDescription": "İrfmak Makina ile dikiş makinelerinde kaliteyi ve güveni keşfedin. Pfaff makineleriyle dikişlerinizi bir üst seviyeye taşıyın.",
+  "instagramCaption": "Dikiş makinelerinde kaliteyi arıyorsanız, Pfaff ile tanışın! İrfmak Makina'da doğru makine danışmanlığı ve destek sizinle. #Singer #Pfaff #DikisMakinesi",
+  "hashtags": [
+    "#Singer",
+    "#Pfaff",
+    "#DikisMakinesi"
+  ],
+  "scenes": [
+    {
+      "type": "broll",
+      "source": "bg1",
+      "duration": 4,
+      "caption": "Her dikiş bir hikaye taşır"
+    },
+    {
+      "type": "broll",
+      "source": "bg2",
+      "duration": 4,
+      "caption": "Kalite doğru makineyle başlar"
+    },
+    {
+      "type": "avatar",
+      "source": "bg3",
+      "duration": 7,
+      "text": "Doğru dikiş makinesi, sadece bir ürün değil; işinize kalite ve güven katan bir yol arkadaşıdır.",
+      "subtitle": "Doğru makine, güçlü sonuç"
+    },
+    {
+      "type": "broll",
+      "source": "bg3",
+      "duration": 4,
+      "caption": "Singer ve Pfaff gücü"
+    },
+    {
+      "type": "avatar",
+      "source": "bg1",
+      "duration": 7,
+      "text": "İrfmak Makina olarak, ihtiyacınıza uygun modeli seçmeniz için satıştan servise kadar yanınızdayız.",
+      "subtitle": "Satıştan servise destek"
+    },
+    {
+      "type": "broll",
+      "source": "bg2",
+      "duration": 4,
+      "caption": "Dikişinize güven katın"
+    },
+    {
+      "type": "logo",
+      "duration": 2
+    }
+  ],
+  "createdAt": "2026-05-02T15:32:27.067Z"
+}
