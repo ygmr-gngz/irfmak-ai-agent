@@ -6,7 +6,9 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "reset": "node reset-data.js"
+    "reset": "node reset-data.js",
+    "auto": "node auto-daily.js",
+    "youtube": "node auto-run.js"
   },
   "keywords": [
     "irfmak",
