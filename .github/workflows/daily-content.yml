@@ -1,80 +1,86 @@
-name: Daily Content Generator
+name: Günlük İçerik Üreticisi
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # 09:00 Türkiye
-    - cron: '0 15 * * *'  # 18:00 Türkiye
+    - cron: '0 6 * * *'   # Türkiye saati 09:00
+    - cron: '0 15 * * *'  # Türkiye saati 18:00
   workflow_dispatch:
 
 jobs:
-  generate-content:
+  uret-icerik:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout Repository
+      - name: Depoyu Al
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Node.js Kur
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Bağımlılıkları Yükle
+        run: npm ci
 
-      - name: Debug Environment
-        run: |
-          echo "Checking required environment variables..."
-
-          if [ -z "${OPENAI_API_KEY}" ]; then
-            echo "❌ OPENAI_API_KEY missing"
-            exit 1
-          fi
-
-          if [ -z "${HEYGEN_API_KEY}" ]; then
-            echo "❌ HEYGEN_API_KEY missing"
-            exit 1
-          fi
-
-          if [ -z "${YOUTUBE_API_KEY}" ]; then
-            echo "❌ YOUTUBE_API_KEY missing"
-            exit 1
-          fi
-
-          echo "✅ Environment variables loaded"
-
+      - name: Ortam Değişkenlerini Kontrol Et
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          APP_URL: ${{ secrets.APP_URL }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        run: |
+          echo "Ortam değişkenleri kontrol ediliyor..."
 
-      - name: Run Content Generator
+          test -n "$OPENAI_API_KEY" || (echo "OPENAI_API_KEY eksik" && exit 1)
+          test -n "$HEYGEN_API_KEY" || (echo "HEYGEN_API_KEY eksik" && exit 1)
+          test -n "$SUPABASE_URL" || (echo "SUPABASE_URL eksik" && exit 1)
+          test -n "$SUPABASE_ANON_KEY" || (echo "SUPABASE_ANON_KEY eksik" && exit 1)
+          test -n "$APP_URL" || (echo "APP_URL eksik" && exit 1)
+
+          echo "Zorunlu değişkenler tamam."
+
+      - name: İçerik Oluşturucuyu Çalıştır
         env:
+          NODE_ENV: production
+
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
 
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
 
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
-          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+          APP_URL: ${{ secrets.APP_URL }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-
-          NODE_ENV: production
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
 
         run: |
-          echo "🚀 Starting content generator..."
-          node generate-content.js
+          echo "🚀 İçerik üreticisi başlatılıyor..."
+          npm run auto
 
-      - name: Upload Logs on Failure
+      - name: Hata Loglarını Kaydet
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: error-logs
+          name: hata-loglari
           path: |
             *.log
             logs/
+            data/
+          if-no-files-found: ignore
