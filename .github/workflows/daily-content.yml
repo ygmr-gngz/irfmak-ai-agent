@@ -2,8 +2,8 @@ name: Günlük İçerik Üreticisi
 
 on:
   schedule:
-    - cron: '0 6 * * *'   # Türkiye saati 09:00
-    - cron: '0 15 * * *'  # Türkiye saati 18:00
+    - cron: '0 6 * * *'
+    - cron: '0 15 * * *'
   workflow_dispatch:
 
 jobs:
@@ -45,7 +45,9 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_REDIRECT_URI: ${{ secrets.YOUTUBE_REDIRECT_URI }}
           YOUTUBE_PRIVACY: ${{ secrets.YOUTUBE_PRIVACY }}
+
         run: |
           echo "Ortam değişkenleri kontrol ediliyor..."
 
@@ -60,8 +62,9 @@ jobs:
           test -n "$YOUTUBE_CLIENT_ID" || (echo "YOUTUBE_CLIENT_ID eksik" && exit 1)
           test -n "$YOUTUBE_CLIENT_SECRET" || (echo "YOUTUBE_CLIENT_SECRET eksik" && exit 1)
           test -n "$YOUTUBE_REFRESH_TOKEN" || (echo "YOUTUBE_REFRESH_TOKEN eksik" && exit 1)
+          test -n "$YOUTUBE_REDIRECT_URI" || (echo "YOUTUBE_REDIRECT_URI eksik" && exit 1)
 
-          echo "Zorunlu değişkenler tamam."
+          echo "Tüm değişkenler tamam."
 
       - name: İçerik Oluşturucuyu Çalıştır
         env:
@@ -86,6 +89,7 @@ jobs:
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_REDIRECT_URI: ${{ secrets.YOUTUBE_REDIRECT_URI }}
           YOUTUBE_PRIVACY: ${{ secrets.YOUTUBE_PRIVACY }}
 
         run: |
@@ -100,7 +104,7 @@ jobs:
           path: |
             *.log
             logs/
-            data/
             outputs/
+            data/
           if-no-files-found: ignore
 
