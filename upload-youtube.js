@@ -13,19 +13,20 @@ async function uploadVideo(videoPath, title, description, tags = []) {
   const clientId = process.env.YOUTUBE_CLIENT_ID;
   const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
   const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN;
+  const redirectUri = process.env.YOUTUBE_REDIRECT_URI; // .yml'den gelen adres
 
-  if (!clientId || !clientSecret || !refreshToken) {
+  if (!clientId || !clientSecret || !refreshToken || !redirectUri) {
     throw new Error(
-      'Kritik eksiklik: YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET veya YOUTUBE_REFRESH_TOKEN ortam değişkenleri tanımlı değil!'
+      'Kritik eksiklik: YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN veya YOUTUBE_REDIRECT_URI ortam değişkenleri tanımlı değil!'
     );
   }
 
   // 2. OAuth2 İstemcisini Yapılandır
-  // Redirect URI olarak Railway ve GitHub Actions ortamları için genel kabul gören oob/localhost yapısı kurulur
+  // .yml dosyasında kontrol edilen ve tarayıcıda onay aldığın redirect adresi doğrudan buraya beslenir
   const oauth2Client = new google.auth.OAuth2(
     clientId,
     clientSecret,
-    'urn:ietf:wg:oauth:2.0:oob' 
+    redirectUri
   );
 
   // 3. Yenilenen Refresh Token'ı İstemciye Tanıt
@@ -55,10 +56,10 @@ async function uploadVideo(videoPath, title, description, tags = []) {
           title: title,
           description: description,
           tags: tags,
-          categoryId: '22' // 22: People & Blogs (Tekstil/Dikiş içerikleri için uygundur)
+          categoryId: '22' // 22: People & Blogs
         },
         status: {
-          privacyStatus: 'public', // Doğrudan herkese açık yayınlar (İstersen 'unlisted' veya 'private' yapabilirsin)
+          privacyStatus: 'public', // Herkese açık yayınlama
           selfDeclaredMadeForKids: false
         }
       },
