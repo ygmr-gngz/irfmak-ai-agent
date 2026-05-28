@@ -1,43 +1,38 @@
-require('dotenv').config();
 const { google } = require('googleapis');
-const http = require('http');
-const url = require('url');
+const readline = require('readline');
+
+const CLIENT_ID = '586372922050-ekd2i3tm2i4u22k34vmemjt45489g9va.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const REDIRECT_URI = 'http://localhost:3000/oauth2callback';
 
 const oauth2Client = new google.auth.OAuth2(
-  process.env.YOUTUBE_CLIENT_ID,
-  process.env.YOUTUBE_CLIENT_SECRET,
-  process.env.YOUTUBE_REDIRECT_URI
+  CLIENT_ID,
+  CLIENT_SECRET,
+  REDIRECT_URI
 );
-
-const scopes = [
-  'https://www.googleapis.com/auth/youtube.upload',
-  'https://www.googleapis.com/auth/youtube'
-];
 
 const authUrl = oauth2Client.generateAuthUrl({
   access_type: 'offline',
-  scope: scopes,
-  prompt: 'consent'
+  prompt: 'consent',
+  scope: ['https://www.googleapis.com/auth/youtube.upload'],
 });
 
-console.log('Tarayıcıda şu linki aç:');
+console.log('\nBu linki aç:\n');
 console.log(authUrl);
 
-const server = http.createServer(async (req, res) => {
-  const qs = new url.URL(req.url, 'http://localhost:3000').searchParams;
-  const code = qs.get('code');
-  
-  if (code) {
-    const { tokens } = await oauth2Client.getToken(code);
-    console.log('\n✅ REFRESH TOKEN:');
-    console.log(tokens.refresh_token);
-    console.log('\n.env dosyasına ekle:');
-    console.log('YOUTUBE_REFRESH_TOKEN=' + tokens.refresh_token);
-    res.end('Token alındı! Terminale bak.');
-    server.close();
-  }
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
 });
 
-server.listen(3000, () => {
-  console.log('\nSunucu başladı, tarayıcıda linki aç...');
+rl.question('\nCode değerini yapıştır: ', async (code) => {
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    console.log('\nREFRESH TOKEN:\n');
+    console.log(tokens.refresh_token);
+  } catch (err) {
+    console.error(err.message);
+  }
+
+  rl.close();
 });
