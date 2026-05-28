@@ -1,50 +1,65 @@
-require('dotenv').config();
-
 const { google } = require('googleapis');
 const fs = require('fs');
 
+/**
+ * YouTube'a video yükleyen ana fonksiyon
+ * @param {string} videoPath - Yüklenecek MP4 dosyasının yolu
+ * @param {string} title - Video Başlığı
+ * @param {string} description - Video Açıklaması
+ * @param {Array<string>} tags - Video Etiketleri
+ */
 async function uploadVideo(videoPath, title, description, tags = []) {
-  if (!fs.existsSync(videoPath)) {
-    throw new Error(`Video dosyası bulunamadı: ${videoPath}`);
+  // 1. Ortam değişkenlerinin (Secrets) eksiksiz olduğunu doğrula
+  const clientId = process.env.YOUTUBE_CLIENT_ID;
+  const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
+  const refreshToken = process.env.YOUTUBE_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      'Kritik eksiklik: YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET veya YOUTUBE_REFRESH_TOKEN ortam değişkenleri tanımlı değil!'
+    );
   }
 
-  console.log('OAuth debug:', {
-    hasClientId: !!process.env.YOUTUBE_CLIENT_ID,
-    clientIdStart: process.env.YOUTUBE_CLIENT_ID?.slice(0, 25),
-    hasClientSecret: !!process.env.YOUTUBE_CLIENT_SECRET,
-    clientSecretStart: process.env.YOUTUBE_CLIENT_SECRET?.slice(0, 8),
-    hasRefreshToken: !!process.env.YOUTUBE_REFRESH_TOKEN,
-    refreshTokenStart: process.env.YOUTUBE_REFRESH_TOKEN?.slice(0, 8),
-    redirectUri: process.env.YOUTUBE_REDIRECT_URI
-  });
-
-  const auth = new google.auth.OAuth2(
-    process.env.YOUTUBE_CLIENT_ID,
-    process.env.YOUTUBE_CLIENT_SECRET,
-    process.env.YOUTUBE_REDIRECT_URI
+  // 2. OAuth2 İstemcisini Yapılandır
+  // Redirect URI olarak Railway ve GitHub Actions ortamları için genel kabul gören oob/localhost yapısı kurulur
+  const oauth2Client = new google.auth.OAuth2(
+    clientId,
+    clientSecret,
+    'urn:ietf:wg:oauth:2.0:oob' 
   );
 
-  auth.setCredentials({
-    refresh_token: process.env.YOUTUBE_REFRESH_TOKEN
+  // 3. Yenilenen Refresh Token'ı İstemciye Tanıt
+  oauth2Client.setCredentials({
+    refresh_token: refreshToken
   });
 
-  const youtube = google.youtube({ version: 'v3', auth });
+  // 4. YouTube API İstemcisini Başlat
+  const youtube = google.youtube({
+    version: 'v3',
+    auth: oauth2Client
+  });
 
-  console.log("YouTube'a yükleniyor:", videoPath);
+  console.log('🔄 YouTube OAuth2 doğrulaması başarılı. Yükleme hazırlığı yapılıyor...');
 
+  // 5. Video Dosyasının Varlığını Kontrol Et
+  if (!fs.existsSync(videoPath)) {
+    throw new Error(`Yüklenecek video dosyası bulunamadı: ${videoPath}`);
+  }
+
+  // 6. YouTube API'sine Yükleme İsteği Gönder
   try {
-    const res = await youtube.videos.insert({
-      part: ['snippet', 'status'],
+    const response = await youtube.videos.insert({
+      part: 'snippet,status',
       requestBody: {
         snippet: {
-          title,
-          description,
-          tags,
-          categoryId: '26',
-          defaultLanguage: 'tr'
+          title: title,
+          description: description,
+          tags: tags,
+          categoryId: '22' // 22: People & Blogs (Tekstil/Dikiş içerikleri için uygundur)
         },
         status: {
-          privacyStatus: process.env.YOUTUBE_PRIVACY || 'private'
+          privacyStatus: 'public', // Doğrudan herkese açık yayınlar (İstersen 'unlisted' veya 'private' yapabilirsin)
+          selfDeclaredMadeForKids: false
         }
       },
       media: {
@@ -52,13 +67,14 @@ async function uploadVideo(videoPath, title, description, tags = []) {
       }
     });
 
-    const videoUrl = `https://www.youtube.com/watch?v=${res.data.id}`;
-    console.log("✅ YouTube'a yüklendi:", videoUrl);
-
-    return videoUrl;
-  } catch (err) {
-    console.error('YouTube detay hata:', err.response?.data || err.errors || err.message);
-    throw err;
+    // 7. Başarılı Sonucu Dön
+    return `https://www.youtube.com/watch?v=${response.data.id}`;
+  } catch (apiError) {
+    // Google API'den dönen detaylı hatayı logla
+    if (apiError.response && apiError.response.data) {
+      console.error('❌ Google API Detaylı Hata:', JSON.stringify(apiError.response.data, null, 2));
+    }
+    throw apiError;
   }
 }
 
