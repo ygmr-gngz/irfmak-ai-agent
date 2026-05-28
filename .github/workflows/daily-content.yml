@@ -28,37 +28,28 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
-
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
-
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
           APP_URL: ${{ secrets.APP_URL }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
           YOUTUBE_REDIRECT_URI: ${{ secrets.YOUTUBE_REDIRECT_URI }}
           YOUTUBE_PRIVACY: ${{ secrets.YOUTUBE_PRIVACY }}
-
         run: |
           echo "Ortam değişkenleri kontrol ediliyor..."
 
           test -n "$OPENAI_API_KEY" || (echo "OPENAI_API_KEY eksik" && exit 1)
           test -n "$HEYGEN_API_KEY" || (echo "HEYGEN_API_KEY eksik" && exit 1)
-
           test -n "$SUPABASE_URL" || (echo "SUPABASE_URL eksik" && exit 1)
           test -n "$SUPABASE_ANON_KEY" || (echo "SUPABASE_ANON_KEY eksik" && exit 1)
-
           test -n "$APP_URL" || (echo "APP_URL eksik" && exit 1)
-
           test -n "$YOUTUBE_CLIENT_ID" || (echo "YOUTUBE_CLIENT_ID eksik" && exit 1)
           test -n "$YOUTUBE_CLIENT_SECRET" || (echo "YOUTUBE_CLIENT_SECRET eksik" && exit 1)
           test -n "$YOUTUBE_REFRESH_TOKEN" || (echo "YOUTUBE_REFRESH_TOKEN eksik" && exit 1)
@@ -69,29 +60,22 @@ jobs:
       - name: İçerik Oluşturucuyu Çalıştır
         env:
           NODE_ENV: production
-
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
-
           HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
-
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
           APP_URL: ${{ secrets.APP_URL }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
           YOUTUBE_REDIRECT_URI: ${{ secrets.YOUTUBE_REDIRECT_URI }}
           YOUTUBE_PRIVACY: ${{ secrets.YOUTUBE_PRIVACY }}
-
         run: |
           echo "🚀 İçerik üreticisi başlatılıyor..."
           npm run auto
