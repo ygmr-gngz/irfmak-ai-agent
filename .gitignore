@@ -10,3 +10,8 @@ vscode/
 Thumbs.db
 npm-debug.log*
 .DS_Store
+
+outputs/
+tmp/
+new-token.txt
+get-token.js
