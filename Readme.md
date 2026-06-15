@@ -1,269 +1,226 @@
-# IRF Mak — AI İçerik ve Satış Asistanı
+IRFMAK AI Agent
+İrfmak için geliştirilen yapay zeka destekli müşteri danışmanı, sohbet widget'ı, ürün öneri sistemi, yetkili yönlendirme akışı ve içerik otomasyonu altyapısıdır.
+Bu proje; İrfmak web sitesine gömülebilen bir sohbet widget'ı, müşteri taleplerini takip edebilen bir yönetim paneli ve ürün kataloğuna göre çalışan satış odaklı bir AI asistanı içerir.
+İçindekiler
 
-IRF Mak web sitesi için geliştirilmiş, yapay zeka destekli satış asistanı ve sosyal medya içerik üretim platformu.
+Özellikler
+Kullanım Senaryosu
+Teknolojiler
+Proje Yapısı
+Kurulum
+Ortam Değişkenleri
+Komutlar
+API Referansı
+AI Asistan Mantığı
+Ürün Kataloğu
+Widget Kullanımı
+İçerik Otomasyonu
+YouTube Entegrasyonu
+Bilinen Sorunlar ve Dikkat Edilmesi Gerekenler
+Geliştirme Notları
+Lisans
 
-## İçindekiler
+Özellikler
 
-- [Özellikler](#özellikler)
-- [Kurulum](#kurulum)
-- [Satış Asistanı](#satış-asistanı)
-- [YouTube İçerik Modülü](#youtube-içerik-modülü)
-- [Instagram İçerik Modülü](#instagram-içerik-modülü)
-- [Instagram Otomasyonu (Meta Graph API)](#instagram-otomasyonu-meta-graph-api)
-- [İçerik Stüdyosu (Admin UI)](#içerik-stüdyosu-admin-ui)
-- [Proje Yapısı](#proje-yapısı)
-- [Kullanılan Teknolojiler](#kullanılan-teknolojiler)
+Yapay zeka destekli müşteri sohbeti
+Ürün ihtiyacına göre öneri sistemi
+Ev tipi ve sanayi tipi dikiş makineleri için yönlendirme
+Yedek parça, iğne, ayak ve tekstil ekipmanı danışmanlığı
+Yetkiliye aktarım akışı
+Ad soyad ve telefon bilgisi toplama
+WhatsApp Business yönlendirmesi
+Admin panelinden müşteri taleplerini görüntüleme
+Sohbet oturumu takibi
+Ürün kataloğu bazlı öneri mantığı
+Instagram içerik metni üretimi
+YouTube video yükleme altyapısı
+Telegram üzerinden içerik onay akışı
+iframe / widget mantığıyla dış siteye gömülebilir yapı
 
-## Özellikler
+Kullanım Senaryosu
+Müşteri web sitesine girer ve sohbet widget'ı üzerinden ihtiyacını yazar.
+Örnek:
 
-| Modül | Açıklama | Uç Nokta |
-|-------|----------|----------|
-| Satış Asistanı | Web sitesi sohbet widget'ı — ürün önerisi ve WhatsApp yönlendirme akışı | `POST /chat` |
-| YouTube İçerik | 5 farklı türde video içeriği üretimi | `POST /content/youtube/generate` |
-| Instagram İçerik | 5 farklı formatta gönderi içeriği üretimi | `POST /content/instagram/generate` |
-| İçerik Stüdyosu | Yönetici (admin) arayüzü | `GET /content-studio.html` |
+"Ev tipi dikiş makinesi önerir misiniz?"
 
-## Kurulum
+AI asistan müşterinin ihtiyacını analiz eder, ürün kataloğundan uygun ürünleri önerir ve gerekirse kullanıcıyı ürün sayfasına, ödeme adımına veya yetkili görüşmesine yönlendirir.
+Yetkili gerektiren durumlarda sistem müşteriden sırasıyla şu bilgileri toplar:
 
-### 1. Bağımlılıkları yükleyin
+Talep detayı
+Ad soyad bilgisi
+Telefon numarası
 
-```bash
-npm install
-```
-
-### 2. Ortam değişkenlerini tanımlayın
-
-Proje kök dizininde bir `.env` dosyası oluşturun:
-
-```env
-OPENAI_API_KEY=sk-...
-
-# Instagram otomasyonu için (opsiyonel)
-INSTAGRAM_ACCESS_TOKEN=...
-INSTAGRAM_USER_ID=...
-```
-
-### 3. Sunucuyu başlatın
-
-```bash
-node index.js
-```
-
-Sunucu varsayılan olarak şu adreste çalışır: **http://localhost:3000**
-
-## Satış Asistanı
-
-Web sitesine kolayca entegre edilebilen sohbet widget'ı.
-
-### Özellikler
-
-- Bütçe, makine tipi, kumaş türü ve kullanım süresine göre kişiselleştirilmiş ürün önerileri
-- Toplu satış, servis talebi veya arıza durumlarında WhatsApp üzerinden insan desteğine yönlendirme akışı
-- Yönlendirme sürecinde ad, soyad ve telefon bilgisi toplama
-- Oturum ve yönlendirme kayıtlarının `data/` klasöründe JSON formatında saklanması
-
-### Yönetici Uç Noktaları
-
-| Uç Nokta | Açıklama |
-|----------|----------|
-| `GET /admin/handoffs` | Tüm yönlendirme (handoff) kayıtlarını döndürür |
-| `GET /admin/sessions` | Tüm sohbet oturumlarını döndürür |
-
-## YouTube İçerik Modülü
-
-### İçerik Türleri
-
-| İçerik Türü | Anahtar |
-|-------------|---------|
-| Kullanım ve Püf Noktaları | `kullanim_puflari` |
-| Arıza Çözümleri ve Bakım | `ariza_cozum` |
-| Yeni Başlayanlar Rehberi | `baslangic_rehberi` |
-| Ürün İnceleme ve Karşılaştırma | `urun_inceleme` |
-| Profesyonel İpuçları | `profesyonel_ipucu` |
-
-### Uç Noktalar
-
-```
-GET  /content/youtube/types
-GET  /content/youtube/ideas
-POST /content/youtube/generate
-```
-
-### Örnek İstek
-
-```http
-POST /content/youtube/generate
-{
-  "type": "ariza_cozum",
-  "topic": "Dikiş makinesi neden ip atlar?",
-  "product": "Singer M3205"
-}
-```
-
-### Dönen Alanlar
-
-```json
-{
-  "title": "Video başlığı",
-  "description": "YouTube açıklaması",
-  "scriptOutline": [
-    { "timestamp": "0:00", "section": "Giriş", "content": "..." }
-  ],
-  "keywords": ["..."],
-  "hashtags": ["#..."],
-  "thumbnailConcept": "Thumbnail fikri",
-  "hookLine": "İlk 5 saniye kanca cümlesi",
-  "callToAction": "Video sonu CTA"
-}
-```
-
-## Instagram İçerik Modülü
-
-### Format Türleri
-
-| Format Türü | Anahtar |
-|-------------|---------|
-| Makaralar (Reels) | `reels` |
-| Karusel Gönderisi | `karusel` |
-| Teknik İpucu | `teknik_ipucu` |
-| Ürün Tanıtımı | `urun_tanitim` |
-| İlham ve Topluluk | `ilham_topluluk` |
-
-### Uç Noktalar
-
-```
-GET  /content/instagram/types
-GET  /content/instagram/ideas      → 7 günlük haftalık takvim
-POST /content/instagram/generate
-```
-
-### Örnek İstek
-
-```http
-POST /content/instagram/generate
-{
-  "type": "reels",
-  "topic": "Overlok makinesi iplik takma",
-  "product": "Singer Elite SE017"
-}
-```
-
-### Dönen Alanlar (Reels Örneği)
-
-```json
-{
-  "caption": "Kısa açıklama",
-  "fullCaption": "Tam açıklama metni",
-  "hashtags": ["#..."],
-  "reelsScript": [
-    { "second": "0-3", "visual": "...", "text": "...", "voiceover": "..." }
-  ],
-  "hookLine": "Kanca cümlesi",
-  "audioSuggestion": "Müzik önerisi",
-  "textOverlays": ["Ekran yazısı 1"],
-  "storyFollowup": "Story takibi fikri",
-  "cta": "Call to action"
-}
-```
-
-### Hashtag Stratejisi
-
-Her üretimde toplam **30 hashtag** oluşturulur:
-
-1. 5 niş hashtag (örn. `#irfmak`, `#dikişmakinesiservisi`)
-2. 10 orta ölçekli hashtag
-3. 10 geniş kapsamlı hashtag
-4. 5 trend / hedef kitle odaklı etiket
-
-## Instagram Otomasyonu (Meta Graph API)
-
-Üretilen içeriklerin Instagram'a otomatik gönderilmesi için Meta Graph API kullanılır.
-
-### Kurulum Adımları
-
-1. **Facebook Developer hesabı açın**
-   `developers.facebook.com` → Uygulama oluştur → **"Business"** türünü seçin
-
-2. **Instagram hesabınızı hazırlayın**
-   Hesap, Business veya Creator türünde olmalı (kişisel hesaplar çalışmaz) ve bir Facebook Sayfası'na bağlanmalıdır
-
-3. **Uygulamaya izinleri ekleyin**
-   App Ayarları → Permissions bölümünden şu izinleri isteyin:
-   - `instagram_basic`
-   - `instagram_content_publish`
-   - `pages_read_engagement`
-   - `pages_show_list`
-
-4. **Erişim token'ı alın**
-   Graph API Explorer → Token Oluştur → Long-lived token'a çevirin (60 gün geçerli)
-   Instagram Business hesabının `user_id`'sini almak için:
-   ```
-   GET https://graph.facebook.com/v19.0/me/accounts?access_token=TOKEN
-   ```
-
-5. **`.env` dosyasına ekleyin**
-   ```env
-   INSTAGRAM_ACCESS_TOKEN=your_long_lived_token
-   INSTAGRAM_USER_ID=your_ig_business_user_id
-   ```
-
-### Gönderi Yayınlama Akışı
-
-**1. Medya Konteyneri Oluştur**
-```
-POST /{ig-user-id}/media
-→ { image_url, caption } veya { video_url, media_type: "REELS" }
-← creation_id döner
-```
-
-**2. Konteyneri Yayınla**
-```
-POST /{ig-user-id}/media_publish
-→ { creation_id }
-← post_id döner
-```
-
-### Medya Barındırma
-
-Görsel ve video dosyaları herkese açık bir URL'den erişilebilir olmalıdır:
-
-- **Cloudinary** (önerilen — ücretsiz plan yeterli)
-- **AWS S3** (genel/public kova)
-- Herhangi bir CDN
-
-## İçerik Stüdyosu (Admin UI)
-
-`http://localhost:3000/content-studio.html` adresinden erişilir.
-
-- YouTube / Instagram sekme geçişi
-- İçerik türü + konu + opsiyonel ürün girişi
-- "Haftalık İçerik Fikirleri" ile otomatik konu önerileri
-- Her alanda tek tık kopyalama
-
-## Proje Yapısı
-
-```
+Bu bilgiler alındıktan sonra WhatsApp üzerinden devam edilebilecek bir bağlantı oluşturulur.
+Teknolojiler
+KategoriTeknolojiÇalışma zamanıNode.jsWeb çatısıExpress.jsYapay zekaOpenAI APIVeri saklamaSQLite / JSON tabanlı dosya depolamaVeritabanı istemcisiSupabaseEntegrasyonlarGoogle API'leri, YouTube API'leri, Telegram Bot API'siYardımcıdotenv, CORSÖn uçHTML, CSS, JavaScript
+Proje Yapısı
 irfmak-ai-agent/
-├── index.js              # Ana sunucu + satış asistanı
-├── youtubeContent.js     # YouTube içerik router
-├── instagramContent.js   # Instagram içerik router
-├── productCatalog.js     # Ürün kataloğu
-├── public/
-│   ├── index.html        # Chat widget sayfası
-│   ├── widget.js          # Embed widget
-│   ├── app.js             # Chat frontend
-│   ├── style.css          # Stiller
-│   └── content-studio.html  # Admin içerik paneli
+├── .github/
+│   └── workflows/
 ├── data/
-│   ├── sessions.json     # Oturum kayıtları
-│   └── handoffs.json     # Handoff kayıtları
-├── .env                  # API anahtarları (git'e eklenmemeli)
-└── widget-test.html      # Widget test sayfası
-```
+│   ├── sessions.json
+│   └── handoffs.json
+├── public/
+│   ├── index.html
+│   ├── app.js
+│   ├── style.css
+│   ├── admin.html
+│   ├── admin.css
+│   ├── admin.js
+│   ├── widget-page.html
+│   └── widget.js
+├── tmp/
+├── .env.example
+├── db.js
+├── generate-content.js
+├── generate-video.js
+├── get-youtube-token.js
+├── index.js
+├── package.json
+├── productCatalog.js
+├── reset-data.js
+├── supabase.js
+├── upload-youtube.js
+├── widget-test.html
+└── Readme.md
+Kurulum
 
-## Kullanılan Teknolojiler
+Projeyi klonlayın:
 
-- **Node.js + Express** — sunucu
-- **OpenAI GPT-4.1-mini** — AI motor
-- **Meta Graph API** — Instagram otomasyonu
-- **WhatsApp API** — handoff entegrasyonu
+Bashgit clone https://github.com/ygmr-gngz/irfmak-ai-agent.git
+cd irfmak-ai-agent
+
+Bağımlılıkları yükleyin:
+
+Bashnpm install
+
+.env.example dosyasını olarak kopyalayın:.env
+
+Bashcp .env.example .env
+
+.env dosyasını kendi bilgilerinizle doldurun (BKZ. Ortam Değişkenleri).
+Projeyi çalıştırın:
+
+Bashnpm start
+
+Tarayıcıdan açın:
+
+http://localhost:3000
+Ortam Değişkenleri
+Temel yapılandırma:
+çevreOPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4.1-mini
+PORT=3000
+WHATSAPP_NUMBER=905336370137
+ALLOWED_ORIGINS=http://localhost:3000
+ADMIN_KEY=change_this_admin_key
+NODE_ENV=development
+YouTube entegrasyonu için ek değişkenler:
+çevreYOUTUBE_CLIENT_ID=
+YOUTUBE_CLIENT_SECRET=
+YOUTUBE_REDIRECT_URI=
+YOUTUBE_REFRESH_TOKEN=
+
+ADMIN_KEY değerini production ortamında varsayılan değerden değiştirmeniz önerilir.
+
+Komutlar
+KomutAçıklamanpm startSunucuyu başlatırnpm run resetVeri dosyalarını (, ) sıfırlarsessions.jsonhandoffs.json
+API Referansı
+Sohbet Uç Noktası
+POST /chat
+Müşteri mesajını AI asistana gönderir.
+İstek gövdesi:
+JSON{
+  "message": "Ev tipi dikiş makinesi önerir misiniz?",
+  "sessionId": "optional-session-id"
+}
+Yanıt:
+JSON{
+  "reply": "İhtiyacınıza göre öne çıkabilecek seçenekler...",
+  "sessionId": "generated-session-id",
+  "handoffRequired": false,
+  "needContactInfo": false,
+  "showWhatsappButton": false,
+  "whatsappLink": null
+}
+Admin Handoff Listesi
+GET /admin/handoffs
+Yetkiliye aktarılması gereken müşteri taleplerini listeler.
+Admin Session Listesi
+GET /admin/sessions
+Sohbet oturumlarını listeler.
+AI Asistan Mantığı
+Sistem asistanı şu prensiplerle çalışır:
+
+Kullanıcının ihtiyacını kısa ve net şekilde anlamaya çalışır.
+Önce sohbet içinde yardımcı olmaya çalışır.
+Ürün önerisi yaparken ürün kataloğunu referans alır.
+Bilmediği fiyat, stok veya teknik özellikleri uydurmaz.
+Gerekirse kullanıcıdan bütçe, kumaş tipi, kullanım amacı ve kullanım yoğunluğu bilgisi ister.
+Yalnızca gerekli durumlarda yetkiliye yönlendirir.
+
+Yetkiliye yönlendirme gerektiren durumlar:
+
+Toplu satış
+Bayilik / toptan alım
+Özel fiyat talebi
+Servis talebi
+Arıza
+Teknik uyumluluk
+Kullanıcının açıkça yetkili istemesi
+
+Ürün Kataloğu
+Ürünler dosyasında tutulur.productCatalog.js
+Örnek ürün yapısı:
+javascript{
+  id: "pfaff-passport-3",
+  title: "Pfaff Passport 3.0 Elektronik Dikiş Makinesi",
+  price: 30500,
+  priceText: "30.500 TL",
+  category: "ev_tipi",
+  machineType: "ev_tipi",
+  url: "https://www.irfmak.com/urun/pfaff-passport-3-0-elektronik-dikis-makinesi",
+  inStock: true
+}
+AI öneri sistemi bu katalog üzerinden çalışır.
+Widget Kullanımı
+Sohbet widget'ı, web sitesine veya script aracılığıyla gömülebilecek şekilde tasarlanmıştır.iframe
+Widget tarafında bulunan bileşenler:
+
+Sohbet balonu
+Açılır chat paneli
+Hızlı cevap butonları
+Yeni sohbet başlatma
+WhatsApp yönlendirme butonu
+
+İçerik Otomasyonu
+generate-content.js dosyası ürün kataloğundan rastgele bir ürün seçerek OpenAI ile Instagram caption, hashtag ve reklam metni üretir.
+Üretilen içerik, onay için Telegram üzerinden ilgili kişiye gönderilebilir.
+YouTube Entegrasyonu
+upload-youtube.js dosyası Google APIs üzerinden YouTube'a video yükleme altyapısı içerir.
+Gerekli ortam değişkenleri için bkz. Ortam Değişkenleri.
+Bilinen Sorunlar ve Dikkat Edilmesi Gerekenler
+
+Eksik modüller: içinde aşağıdaki dosyalar import edilmektedir:index.js
+
+javascript  const youtubeRouter = require("./youtubeContent");
+  const instagramRouter = require("./instagramContent");
+youtubeContent.js ve dosyaları repoda mevcut değilse, uygulama çalışma zamanında hata verir. Bu modüller kullanılacaksa ilgili route yapıları tamamlanmalı; kullanılmayacaksa ilgili ve satırları kaldırılmalıdır.instagramContent.jsrequireapp.use
+
+Endpoint uyumsuzluğu: içinde sohbet isteği aşağıdaki production adresine gönderilmektedir:public/app.js
+
+javascript  https://brave-compassion-production.up.railway.app/api/chat
+Backend ise endpointini sunmaktadır. Lokal geliştirme için frontend adresi olarak güncellenmeli; production'da ise ile arasında bir proxy/yönlendirme yapılandırılmalı veya endpoint isimleri eşitlenmelidir./chat/chat/api/chat/chat
+Geliştirme Notları
+Planlanan / önerilen geliştirmeler:
+
+Admin panel için kimlik doğrulama (giriş) sistemi
+Supabase ile kalıcı müşteri kayıtları
+Ürün stok ve fiyat bilgisinin canlı API'den çekilmesi
+Sipariş / ödeme entegrasyonu
+WhatsApp Business API entegrasyonu
+Instagram otomatik paylaşım
+Dashboard grafik ve raporlama
+Müşteri segmentasyonu
+Çoklu dil desteği
+Demiryolu / Render dağıtımı dokümantasyonu
