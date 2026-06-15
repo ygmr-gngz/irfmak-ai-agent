@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IRF Mak — İçerik Stüdyosu</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f0f2f5;
+        color: #1a1a2e;
+        min-height: 100vh;
+      }
+
+      /* ── Header ── */
+      header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        padding: 20px 32px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      header .logo {
+        font-size: 22px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.5px;
+      }
+
+      header .logo span {
+        color: #e94560;
+      }
+
+      header .subtitle {
+        font-size: 13px;
+        color: #8892b0;
+        margin-left: auto;
+      }
+
+      /* ── Layout ── */
+      .container {
+        max-width: 1200px;
+        margin: 32px auto;
+        padding: 0 24px;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      /* ── Card ── */
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+      }
+
+      .card-header {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+
+      .card-header h2 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1a1a2e;
+      }
+
+      .card-header p {
+        font-size: 12px;
+        color: #8892b0;
+        margin-top: 4px;
+      }
+
+      .card-body {
+        padding: 20px 24px;
+      }
+
+      /* ── Platform Tabs ── */
+      .platform-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .platform-tab {
+        padding: 12px;
+        border-radius: 10px;
+        border: 2px solid #e8e8e8;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+        background: #fafafa;
+      }
+
+      .platform-tab:hover {
+        border-color: #c0c0c0;
+        background: #f5f5f5;
+      }
+
+      .platform-tab.active-yt {
+        border-color: #ff0000;
+        background: #fff5f5;
+      }
+
+      .platform-tab.active-ig {
+        border-color: #c13584;
+        background: #fff0f8;
+      }
+
+      .platform-tab .tab-icon {
+        font-size: 22px;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .platform-tab .tab-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #444;
+      }
+
+      /* ── Form ── */
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      select,
+      input[type="text"] {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #1a1a2e;
+        background: #fafafa;
+        transition: border-color 0.2s;
+        outline: none;
+      }
+
+      select:focus,
+      input[type="text"]:focus {
+        border-color: #e94560;
+        background: #fff;
+      }
+
+      /* ── Buttons ── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border-radius: 10px;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s;
+      }
+
+      .btn-primary-yt {
+        background: #ff0000;
+        color: #fff;
+        width: 100%;
+        justify-content: center;
+        font-size: 14px;
+        padding: 13px;
+      }
+
+      .btn-primary-yt:hover:not(:disabled) {
+        background: #cc0000;
+      }
+
+      .btn-primary-ig {
+        background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        color: #fff;
+        width: 100%;
+        justify-content: center;
+        font-size: 14px;
+        padding: 13px;
+      }
+
+      .btn-primary-ig:hover:not(:disabled) {
+        opacity: 0.9;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-ideas {
+        background: #f0f2f5;
+        color: #444;
+        width: 100%;
+        justify-content: center;
+        margin-top: 8px;
+      }
+
+      .btn-ideas:hover:not(:disabled) {
+        background: #e4e6ea;
+      }
+
+      .btn-copy {
+        background: #f0f2f5;
+        color: #444;
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      .btn-copy:hover {
+        background: #e0e2e6;
+      }
+
+      .btn-copy.copied {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      /* ── Loading ── */
+      .spinner {
+        display: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Result Panel ── */
+      #result-panel {
+        display: none;
+      }
+
+      .result-header {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .result-header h2 {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .platform-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .badge-yt {
+        background: #ff0000;
+        color: #fff;
+      }
+
+      .badge-ig {
+        background: linear-gradient(135deg, #f09433, #bc1888);
+        color: #fff;
+      }
+
+      /* ── Content Sections ── */
+      .content-section {
+        padding: 20px 24px;
+        border-bottom: 1px solid #f7f7f7;
+      }
+
+      .content-section:last-child {
+        border-bottom: none;
+      }
+
+      .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #8892b0;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .section-value {
+        font-size: 14px;
+        color: #1a1a2e;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .section-value.highlight {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a2e;
+        line-height: 1.3;
+      }
+
+      .hook-box {
+        background: linear-gradient(135deg, #fff3cd, #fff8e1);
+        border-left: 4px solid #ffc107;
+        padding: 12px 16px;
+        border-radius: 0 8px 8px 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #856404;
+      }
+
+      .hashtags-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .hashtag-chip {
+        background: #f0f2f5;
+        color: #1877f2;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px dashed #f0f0f0;
+      }
+
+      .timeline-item:last-child {
+        border-bottom: none;
+      }
+
+      .timeline-ts {
+        font-size: 12px;
+        font-weight: 700;
+        color: #e94560;
+        padding-top: 2px;
+      }
+
+      .timeline-content strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+
+      .timeline-content span {
+        font-size: 13px;
+        color: #555;
+      }
+
+      /* Slide cards */
+      .slides-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+      }
+
+      .slide-card {
+        border: 1.5px solid #e8e8e8;
+        border-radius: 10px;
+        padding: 12px;
+        position: relative;
+      }
+
+      .slide-num {
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #8892b0;
+      }
+
+      .slide-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: #1a1a2e;
+        padding-right: 28px;
+      }
+
+      .slide-content {
+        font-size: 12px;
+        color: #555;
+        line-height: 1.5;
+      }
+
+      .slide-design {
+        margin-top: 6px;
+        font-size: 11px;
+        color: #8892b0;
+        font-style: italic;
+      }
+
+      /* Feature bullets */
+      .feature-list {
+        list-style: none;
+      }
+
+      .feature-list li {
+        padding: 6px 0;
+        font-size: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .feature-list li::before {
+        content: "✓";
+        color: #28a745;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      /* Ideas panel */
+      #ideas-panel {
+        display: none;
+        margin-top: 16px;
+      }
+
+      .idea-card {
+        border: 1.5px solid #e8e8e8;
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .idea-card:hover {
+        border-color: #e94560;
+        background: #fff8f9;
+      }
+
+      .idea-card-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .idea-card-meta {
+        font-size: 12px;
+        color: #8892b0;
+      }
+
+      .idea-type-chip {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #f0f2f5;
+        color: #444;
+        margin-bottom: 6px;
+      }
+
+      /* Empty state */
+      .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: #8892b0;
+      }
+
+      .empty-state .empty-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+
+      .empty-state p {
+        font-size: 14px;
+      }
+
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #1a1a2e;
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        z-index: 9999;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.25s;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">IRF<span>mak</span></div>
+      <div style="font-size: 13px; color: #8892b0; margin-left: 8px">İçerik Stüdyosu</div>
+      <div class="subtitle">AI Destekli Sosyal Medya İçerik Üretici</div>
+    </header>
+
+    <div class="container">
+      <!-- Left: Form -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Platform ve Konu Seç</h2>
+            <p>İçerik üretmek istediğin platformu ve konuyu belirt</p>
+          </div>
+          <div class="card-body">
+            <!-- Platform tabs -->
+            <div class="platform-tabs">
+              <div class="platform-tab active-yt" id="tab-yt" onclick="selectPlatform('youtube')">
+                <span class="tab-icon">▶️</span>
+                <div class="tab-label">YouTube</div>
+              </div>
+              <div class="platform-tab" id="tab-ig" onclick="selectPlatform('instagram')">
+                <span class="tab-icon">📸</span>
+                <div class="tab-label">Instagram</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>İçerik Türü</label>
+              <select id="content-type">
+                <option value="">— Seç —</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Konu / Video Fikri</label>
+              <input
+                type="text"
+                id="topic-input"
+                placeholder="Örn: İğne neden kırılır ve nasıl çözülür?"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Ürün (opsiyonel)</label>
+              <input
+                type="text"
+                id="product-input"
+                placeholder="Örn: Singer M3205, Pfaff Passport 3.0"
+              />
+            </div>
+
+            <button class="btn btn-primary-yt" id="generate-btn" onclick="generate()" disabled>
+              <span id="btn-spinner" class="spinner"></span>
+              <span id="btn-label">İçerik Üret</span>
+            </button>
+
+            <button class="btn btn-ideas" id="ideas-btn" onclick="loadIdeas()" disabled>
+              💡 Haftalık İçerik Fikirleri
+            </button>
+
+            <div id="ideas-panel"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Result -->
+      <div>
+        <div class="card" id="result-panel">
+          <div class="result-header">
+            <h2 id="result-title">Üretilen İçerik</h2>
+            <span id="platform-badge" class="platform-badge badge-yt">YouTube</span>
+          </div>
+          <div id="result-body"></div>
+        </div>
+
+        <div class="card" id="empty-panel">
+          <div class="empty-state">
+            <div class="empty-icon">✨</div>
+            <p>Platform ve konu seçip <strong>İçerik Üret</strong>'e tıkla.</p>
+            <p style="margin-top: 8px">Sana hazır, kopyala-yapıştır içerik gelecek.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      let currentPlatform = "youtube";
+      let isLoading = false;
+
+      const YOUTUBE_TYPES = {
+        kullanim_puflari: "✂️ Kullanım ve Püf Noktaları",
+        ariza_cozum: "🔧 Arıza Çözümleri ve Bakım",
+        baslangic_rehberi: "📚 Yeni Başlayanlar Rehberi",
+        urun_inceleme: "⭐ Ürün İnceleme ve Karşılaştırma",
+        profesyonel_ipucu: "🎯 Profesyonel İpuçları",
+      };
+
+      const INSTAGRAM_TYPES = {
+        reels: "🎬 Reels",
+        karusel: "📱 Karusel Gönderisi",
+        teknik_ipucu: "🔧 Teknik İpucu",
+        urun_tanitim: "⭐ Ürün Tanıtımı",
+        ilham_topluluk: "💫 İlham ve Topluluk",
+      };
+
+      function selectPlatform(platform) {
+        currentPlatform = platform;
+
+        document.getElementById("tab-yt").className =
+          "platform-tab" + (platform === "youtube" ? " active-yt" : "");
+        document.getElementById("tab-ig").className =
+          "platform-tab" + (platform === "instagram" ? " active-ig" : "");
+
+        const btn = document.getElementById("generate-btn");
+        if (platform === "youtube") {
+          btn.className = "btn btn-primary-yt";
+          document.getElementById("platform-badge").className = "platform-badge badge-yt";
+          document.getElementById("platform-badge").textContent = "YouTube";
+        } else {
+          btn.className = "btn btn-primary-ig";
+          document.getElementById("platform-badge").className = "platform-badge badge-ig";
+          document.getElementById("platform-badge").textContent = "Instagram";
+        }
+
+        populateTypes();
+        document.getElementById("ideas-panel").style.display = "none";
+        document.getElementById("ideas-panel").innerHTML = "";
+        checkReady();
+      }
+
+      function populateTypes() {
+        const sel = document.getElementById("content-type");
+        const types = currentPlatform === "youtube" ? YOUTUBE_TYPES : INSTAGRAM_TYPES;
+        sel.innerHTML = '<option value="">— Seç —</option>';
+        for (const [val, label] of Object.entries(types)) {
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = label;
+          sel.appendChild(opt);
+        }
+      }
+
+      function checkReady() {
+        const type = document.getElementById("content-type").value;
+        const topic = document.getElementById("topic-input").value.trim();
+        const ready = type && topic && !isLoading;
+        document.getElementById("generate-btn").disabled = !ready;
+        document.getElementById("ideas-btn").disabled = isLoading;
+      }
+
+      document.getElementById("content-type").addEventListener("change", checkReady);
+      document.getElementById("topic-input").addEventListener("input", checkReady);
+
+      async function generate() {
+        const type = document.getElementById("content-type").value;
+        const topic = document.getElementById("topic-input").value.trim();
+        const product = document.getElementById("product-input").value.trim();
+
+        if (!type || !topic) return;
+
+        isLoading = true;
+        checkReady();
+        document.getElementById("btn-spinner").style.display = "block";
+        document.getElementById("btn-label").textContent = "Üretiliyor...";
+
+        try {
+          const endpoint =
+            currentPlatform === "youtube"
+              ? "/content/youtube/generate"
+              : "/content/instagram/generate";
+
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type, topic, product: product || undefined }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Hata");
+
+          renderResult(data);
+        } catch (err) {
+          showToast("❌ " + err.message);
+        } finally {
+          isLoading = false;
+          document.getElementById("btn-spinner").style.display = "none";
+          document.getElementById("btn-label").textContent = "İçerik Üret";
+          checkReady();
+        }
+      }
+
+      async function loadIdeas() {
+        isLoading = true;
+        checkReady();
+        const ideasBtn = document.getElementById("ideas-btn");
+        ideasBtn.textContent = "⏳ Yükleniyor...";
+
+        try {
+          const endpoint =
+            currentPlatform === "youtube"
+              ? "/content/youtube/ideas"
+              : "/content/instagram/ideas";
+
+          const res = await fetch(endpoint);
+          const data = await res.json();
+          renderIdeas(data);
+        } catch (err) {
+          showToast("❌ " + err.message);
+        } finally {
+          isLoading = false;
+          ideasBtn.textContent = "💡 Haftalık İçerik Fikirleri";
+          checkReady();
+        }
+      }
+
+      function renderIdeas(data) {
+        const panel = document.getElementById("ideas-panel");
+        panel.style.display = "block";
+
+        const items = data.ideas || data.weeklyCalendar || [];
+        if (!items.length) {
+          panel.innerHTML = "<p style='color:#8892b0;font-size:13px'>Fikir üretilemedi.</p>";
+          return;
+        }
+
+        panel.innerHTML =
+          '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#8892b0;margin-bottom:10px">İçerik Fikirleri</div>' +
+          items
+            .map(
+              (item) => `
+          <div class="idea-card" onclick="fillFromIdea(${JSON.stringify(item).replace(/"/g, "&quot;")})">
+            <div class="idea-type-chip">${item.typeLabel || item.type || ""}</div>
+            <div class="idea-card-title">${item.title || item.topic || ""}</div>
+            <div class="idea-card-meta">${item.summary || item.hook || ""}</div>
+            ${item.day ? `<div class="idea-card-meta" style="margin-top:4px">📅 ${item.day} &nbsp;·&nbsp; 🎯 ${item.engagementGoal || ""}</div>` : ""}
+          </div>
+        `
+            )
+            .join("");
+      }
+
+      function fillFromIdea(item) {
+        const typeMap = currentPlatform === "youtube" ? YOUTUBE_TYPES : INSTAGRAM_TYPES;
+        if (item.type && typeMap[item.type]) {
+          document.getElementById("content-type").value = item.type;
+        }
+        if (item.title || item.topic) {
+          document.getElementById("topic-input").value = item.title || item.topic;
+        }
+        checkReady();
+        document.getElementById("ideas-panel").style.display = "none";
+        showToast("✅ Fikir eklendi — şimdi üretebilirsin");
+      }
+
+      function renderResult(data) {
+        document.getElementById("empty-panel").style.display = "none";
+        document.getElementById("result-panel").style.display = "block";
+        document.getElementById("result-title").textContent = data.typeLabel || "Sonuç";
+
+        const body = document.getElementById("result-body");
+
+        if (data.platform === "youtube") {
+          body.innerHTML = buildYouTubeResult(data);
+        } else {
+          body.innerHTML = buildInstagramResult(data);
+        }
+      }
+
+      function buildYouTubeResult(data) {
+        let html = "";
+
+        if (data.hookLine) {
+          html += section(
+            "🎣 Kanca Cümlesi",
+            `<div class="hook-box">${esc(data.hookLine)}</div>`,
+            data.hookLine
+          );
+        }
+
+        if (data.title) {
+          html += section(
+            "📌 Video Başlığı",
+            `<div class="section-value highlight">${esc(data.title)}</div>`,
+            data.title
+          );
+        }
+
+        if (data.description) {
+          html += section(
+            "📄 Açıklama",
+            `<div class="section-value">${esc(data.description)}</div>`,
+            data.description
+          );
+        }
+
+        if (data.scriptOutline && data.scriptOutline.length) {
+          const timelineHtml = data.scriptOutline
+            .map(
+              (s) => `
+            <div class="timeline-item">
+              <div class="timeline-ts">${esc(s.timestamp)}</div>
+              <div class="timeline-content">
+                <strong>${esc(s.section)}</strong>
+                <span>${esc(s.content)}</span>
+              </div>
+            </div>
+          `
+            )
+            .join("");
+          html += section(
+            "🎬 Video Planı",
+            timelineHtml,
+            data.scriptOutline.map((s) => `${s.timestamp} — ${s.section}: ${s.content}`).join("\n")
+          );
+        }
+
+        if (data.thumbnailConcept) {
+          html += section(
+            "🖼 Thumbnail Fikri",
+            `<div class="section-value">${esc(data.thumbnailConcept)}</div>`,
+            data.thumbnailConcept
+          );
+        }
+
+        if (data.callToAction) {
+          html += section(
+            "📣 Call to Action",
+            `<div class="section-value">${esc(data.callToAction)}</div>`,
+            data.callToAction
+          );
+        }
+
+        if (data.hashtags && data.hashtags.length) {
+          const tags = Array.isArray(data.hashtags) ? data.hashtags : data.hashtags.split(/\s+/);
+          html += section(
+            "🏷 Hashtagler",
+            `<div class="hashtags-wrap">${tags.map((t) => `<span class="hashtag-chip">${esc(t)}</span>`).join("")}</div>`,
+            tags.join(" ")
+          );
+        }
+
+        if (data.keywords && data.keywords.length) {
+          const kws = Array.isArray(data.keywords) ? data.keywords : [data.keywords];
+          html += section(
+            "🔍 Anahtar Kelimeler",
+            `<div class="section-value">${esc(kws.join(", "))}</div>`,
+            kws.join(", ")
+          );
+        }
+
+        return html;
+      }
+
+      function buildInstagramResult(data) {
+        let html = "";
+
+        if (data.hookLine || data.emotionalHook) {
+          html += section(
+            "🎣 Hook / Açılış",
+            `<div class="hook-box">${esc(data.hookLine || data.emotionalHook)}</div>`,
+            data.hookLine || data.emotionalHook
+          );
+        }
+
+        if (data.caption) {
+          html += section(
+            "✏️ Kısa Açıklama (Caption)",
+            `<div class="section-value highlight">${esc(data.caption)}</div>`,
+            data.caption
+          );
+        }
+
+        if (data.fullCaption) {
+          html += section(
+            "📝 Tam Açıklama",
+            `<div class="section-value">${esc(data.fullCaption)}</div>`,
+            data.fullCaption
+          );
+        }
+
+        // Reels script
+        if (data.reelsScript && data.reelsScript.length) {
+          const scriptHtml = data.reelsScript
+            .map(
+              (s) => `
+            <div class="timeline-item">
+              <div class="timeline-ts">${esc(String(s.second || ""))}</div>
+              <div class="timeline-content">
+                <strong>${esc(s.text || "")}</strong>
+                <span>${esc(s.visual || "")} ${s.voiceover ? "· " + esc(s.voiceover) : ""}</span>
+              </div>
+            </div>
+          `
+            )
+            .join("");
+          html += section(
+            "🎬 Reels Sahne Planı",
+            scriptHtml,
+            data.reelsScript.map((s) => `${s.second}: ${s.text} — ${s.visual}`).join("\n")
+          );
+        }
+
+        if (data.textOverlays && data.textOverlays.length) {
+          html += section(
+            "🖊 Ekran Yazıları",
+            `<ul class="feature-list">${data.textOverlays.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`,
+            data.textOverlays.join("\n")
+          );
+        }
+
+        // Carousel slides
+        if (data.slides && data.slides.length) {
+          const slidesHtml = `<div class="slides-grid">${data.slides
+            .map(
+              (s) => `
+            <div class="slide-card">
+              <span class="slide-num">${s.slideNumber}</span>
+              <div class="slide-title">${esc(s.title || "")}</div>
+              <div class="slide-content">${esc(s.content || s.subtitle || "")}</div>
+              ${s.designNote ? `<div class="slide-design">🎨 ${esc(s.designNote)}</div>` : ""}
+            </div>
+          `
+            )
+            .join("")}</div>`;
+          html += section(
+            "📱 Slaytlar",
+            slidesHtml,
+            data.slides.map((s) => `Slayt ${s.slideNumber}: ${s.title} — ${s.content || s.subtitle}`).join("\n")
+          );
+        }
+
+        // Key selling points
+        if (data.keySellingPoints && data.keySellingPoints.length) {
+          html += section(
+            "💎 Satış Noktaları",
+            `<ul class="feature-list">${data.keySellingPoints.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`,
+            data.keySellingPoints.join("\n")
+          );
+        }
+
+        if (data.postHeadline) {
+          html += section(
+            "🔤 Görsele Yazılacak Metin",
+            `<div class="section-value highlight">${esc(data.postHeadline)}</div>`,
+            data.postHeadline
+          );
+        }
+
+        if (data.postSubtext) {
+          html += section(
+            "🔤 Alt Metin",
+            `<div class="section-value">${esc(data.postSubtext)}</div>`,
+            data.postSubtext
+          );
+        }
+
+        if (data.visualDescription || data.coverDesign) {
+          html += section(
+            "🎨 Görsel Önerisi",
+            `<div class="section-value">${esc(data.visualDescription || data.coverDesign)}</div>`,
+            data.visualDescription || data.coverDesign
+          );
+        }
+
+        if (data.audioSuggestion) {
+          html += section(
+            "🎵 Ses / Müzik Önerisi",
+            `<div class="section-value">${esc(data.audioSuggestion)}</div>`,
+            data.audioSuggestion
+          );
+        }
+
+        if (data.engagementQuestion) {
+          html += section(
+            "💬 Yorum Sorusu",
+            `<div class="hook-box">${esc(data.engagementQuestion)}</div>`,
+            data.engagementQuestion
+          );
+        }
+
+        if (data.cta) {
+          html += section(
+            "📣 Call to Action",
+            `<div class="section-value">${esc(data.cta)}</div>`,
+            data.cta
+          );
+        }
+
+        if (data.storyFollowup) {
+          html += section(
+            "📲 Story Takibi",
+            `<div class="section-value">${esc(data.storyFollowup)}</div>`,
+            data.storyFollowup
+          );
+        }
+
+        if (data.hashtags && data.hashtags.length) {
+          const tags = Array.isArray(data.hashtags) ? data.hashtags : data.hashtags.split(/\s+/);
+          html += section(
+            "🏷 Hashtagler (30 adet)",
+            `<div class="hashtags-wrap">${tags.map((t) => `<span class="hashtag-chip">${esc(t)}</span>`).join("")}</div>`,
+            tags.join(" ")
+          );
+        }
+
+        return html;
+      }
+
+      function section(label, contentHtml, copyText) {
+        const copyId = "copy-" + Math.random().toString(36).slice(2);
+        const escapedCopy = copyText ? copyText.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n") : "";
+        return `
+        <div class="content-section">
+          <div class="section-label">
+            ${label}
+            ${copyText ? `<button class="btn btn-copy" id="${copyId}" onclick="copyText('${copyId}', '${escapedCopy}')">Kopyala</button>` : ""}
+          </div>
+          ${contentHtml}
+        </div>
+      `;
+      }
+
+      function copyText(btnId, text) {
+        navigator.clipboard
+          .writeText(text.replace(/\\n/g, "\n"))
+          .then(() => {
+            const btn = document.getElementById(btnId);
+            btn.textContent = "✓ Kopyalandı";
+            btn.classList.add("copied");
+            setTimeout(() => {
+              btn.textContent = "Kopyala";
+              btn.classList.remove("copied");
+            }, 1800);
+          })
+          .catch(() => showToast("Kopyalama başarısız"));
+      }
+
+      function esc(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2800);
+      }
+
+      // Init
+      populateTypes();
+    </script>
+  </body>
+</html>

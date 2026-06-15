@@ -1,234 +1,262 @@
-# İrfmak Yapay Zeka Sistemi
+# IRF Mak — AI İçerik ve Satış Asistanı
 
-<div align="center">
-
-![İrfmak AI](https://img.shields.io/badge/İrfmak-AI%20System-blue?style=for-the-badge&logo=robot&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
-![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)
-
-**İrfmak Makina için geliştirilmiş yapay zeka destekli müşteri yönetim ve otomatik video üretim sistemi.**
-
-</div>
+IRF Mak web sitesi için AI destekli satış asistanı ve sosyal medya içerik üreticisi.
 
 ---
 
-## 📌 İçindekiler
+## Özellikler
 
-- [Genel Bakış](#-genel-bakış)
-- [Sistem 1 — AI Satış Ajanı](#-sistem-1--ai-satış-ajanı)
-- [Sistem 2 — AI Video Otomasyon](#-sistem-2--ai-video-otomasyon)
-- [Proje Yapısı](#-proje-yapısı)
-- [Kurulum](#-kurulum)
-- [Kullanım](#-kullanım)
-- [Günlük İçerik Planı](#-günlük-i̇çerik-planı)
-- [Büyüme Stratejisi](#-büyüme-stratejisi)
-- [Yol Haritası](#-yol-haritası)
-- [Önemli Notlar](#-önemli-notlar)
+| Modül | Açıklama | Endpoint |
+|---|---|---|
+| **Satış Asistanı** | Web sitesi chat widget'ı — ürün önerisi, handoff akışı | `POST /chat` |
+| **YouTube İçerik** | 5 türde video içeriği üretimi | `POST /content/youtube/generate` |
+| **Instagram İçerik** | 5 formatta gönderi üretimi | `POST /content/instagram/generate` |
+| **İçerik Stüdyosu** | Admin UI | `GET /content-studio.html` |
 
 ---
 
-## 🔭 Genel Bakış
-
-Bu proje iki bağımsız ama birbirini tamamlayan sistemden oluşur:
-
-| Sistem | Amaç | Teknolojiler |
-|--------|------|--------------|
-| 🤖 AI Satış Ajanı | Müşteri sohbeti, ürün danışmanlığı, satış takibi | Node.js, OpenAI, SQLite |
-| 🎬 Video Otomasyon | Senaryo üretimi, video oluşturma, YouTube yükleme | HeyGen, OpenAI, YouTube API |
-
----
-
-## 🤖 Sistem 1 — AI Satış Ajanı
-
-Müşteri sorularını yanıtlayan, ürün öneren ve satış sürecini uçtan uca yöneten yapay zeka ajanı.
-
-### Özellikler
-
-- 💬 Yapay zeka destekli gerçek zamanlı müşteri sohbeti
-- 🛒 Ürün kataloğu entegrasyonu ve akıllı öneri sistemi
-- 📱 WhatsApp Business geçiş yönlendirmesi
-- 👤 Yetkili temsilciye yönlendirme akışı
-- 🖥️ Yönetim paneli (admin dashboard)
-- 📋 Müşteri talepleri ve satış kaydı takibi
-- 🧾 Otomatik makbuz yazdırma
-- 🗄️ SQLite tabanlı yerel veri yönetimi
-- 🔗 iframe ile herhangi bir siteye gömülebilir widget
-
-### Teknoloji Yığını
-
-- **Backend:** Node.js, Express
-- **Veritabanı:** SQLite
-- **Yapay Zeka:** OpenAI API (GPT)
-- **Frontend:** HTML, CSS, Vanilla JavaScript
-
----
-
-## 🎬 Sistem 2 — AI Video Otomasyon
-
-Sıfırdan video senaryosu üreten, avatar videosu render eden ve YouTube'a otomatik olarak yükleyen tam otomasyon sistemi.
-
-### Özellikler
-
-- 🧠 OpenAI ile ürün odaklı video senaryosu üretimi
-- 🎥 HeyGen ile AI avatar video render
-- 📤 YouTube Data API ile otomatik yükleme
-- 📅 Gün bazlı içerik planlaması (`auto-daily`)
-- 🎯 Singer / Pfaff / Karma içerik kategorileri
-- 🔥 Hook, altyazı ve satış odaklı senaryo yapısı
-
----
-
-## 📁 Proje Yapısı
-
-```
-irfmak-ai-agent/
-│
-├── 📦 Çekirdek (AI Agent)
-│   ├── index.js                  # Ana sunucu / Express uygulaması
-│   ├── db.js                     # SQLite bağlantısı ve şema
-│   ├── productCatalog.js         # Ürün kataloğu verileri
-│   ├── reset-data.js             # Veritabanı sıfırlama aracı
-│   └── package.json
-│
-├── 🌐 Arayüz (public/)
-│   ├── index.html                # Ana chat arayüzü
-│   ├── app.js                    # Chat istemci mantığı
-│   ├── style.css
-│   ├── admin.html                # Yönetim paneli
-│   ├── admin.js
-│   ├── admin.css
-│   ├── widget-page.html          # Widget önizleme sayfası
-│   └── widget.js                 # Gömülebilir widget kodu
-│
-├── 🎬 Video Otomasyon
-│   ├── generate-heygen-agent-video.js   # HeyGen video üretici
-│   ├── reels-agent-video.js             # Reels formatı üretici
-│   ├── upload-youtube.js                # YouTube yükleyici
-│   ├── auto-run.js                      # Tekil çalıştırma
-│   └── auto-daily.js                    # Günlük zamanlayıcı
-│
-├── 🗄️ data/                      # SQLite veritabanı dosyaları
-└── .env.example
-```
-
----
-
-## ⚙️ Kurulum
-
-### 1. Depoyu Klonla
-
-```bash
-git clone https://github.com/USERNAME/irfmak-ai-agent.git
-cd irfmak-ai-agent
-```
-
-### 2. Bağımlılıkları Yükle
+## Kurulum
 
 ```bash
 npm install
 ```
 
-### 3. Ortam Değişkenlerini Ayarla
-
-`.env.example` dosyasını kopyalayarak `.env` oluştur ve değerleri doldur:
-
-```bash
-cp .env.example .env
-```
+`.env` dosyası oluştur:
 
 ```env
-# Yapay Zeka
 OPENAI_API_KEY=sk-...
 
-# Video Üretim
-HEYGEN_API_KEY=...
-
-# YouTube API
-YOUTUBE_CLIENT_ID=...
-YOUTUBE_CLIENT_SECRET=...
-YOUTUBE_REFRESH_TOKEN=...
-YOUTUBE_REDIRECT_URI=http://localhost:3000
-
-# Yayın Ayarı: public | unlisted | private
-YOUTUBE_PRIVACY=public
+# Instagram otomasyonu için (opsiyonel)
+INSTAGRAM_ACCESS_TOKEN=...
+INSTAGRAM_USER_ID=...
 ```
-
-### 4. Sunucuyu Başlat
 
 ```bash
 node index.js
 ```
 
+Sunucu `http://localhost:3000` adresinde başlar.
+
 ---
 
-## 🚀 Kullanım
+## Satış Asistanı
 
-### Tekil Video Üret ve YouTube'a Yükle
+Web sitesine embed edilebilir chat widget'ı.
 
-```bash
-node auto-run.js "Singer ve Pfaff dikiş makineleri"
+**Özellikler:**
+- Bütçe, makine tipi, kumaş türü ve kullanım saatine göre ürün önerisi
+- Toplu satış, servis, arıza gibi durumlarda WhatsApp handoff akışı
+- Ad, soyad ve telefon toplama
+- Session ve handoff kayıtları (`data/` klasöründe JSON)
+
+**Admin endpoint'leri:**
+```
+GET /admin/handoffs   → Tüm handoff kayıtları
+GET /admin/sessions   → Tüm oturumlar
 ```
 
-### Günlük Otomasyonu Başlat
+---
 
-```bash
-node auto-daily.js
+## YouTube İçerik Modülü
+
+### İçerik Türleri
+
+| Tür | Anahtar |
+|---|---|
+| Kullanım ve Püf Noktaları | `kullanim_puflari` |
+| Arıza Çözümleri ve Bakım | `ariza_cozum` |
+| Yeni Başlayanlar Rehberi | `baslangic_rehberi` |
+| Ürün İnceleme ve Karşılaştırma | `urun_inceleme` |
+| Profesyonel İpuçları | `profesyonel_ipucu` |
+
+### Endpoint'ler
+
+```
+GET  /content/youtube/types
+GET  /content/youtube/ideas
+POST /content/youtube/generate
+```
+
+### Örnek İstek
+
+```json
+POST /content/youtube/generate
+{
+  "type": "ariza_cozum",
+  "topic": "Dikiş makinesi neden ip atlar?",
+  "product": "Singer M3205"
+}
+```
+
+### Dönen Alanlar
+
+```json
+{
+  "title": "Video başlığı",
+  "description": "YouTube açıklaması",
+  "scriptOutline": [{ "timestamp": "0:00", "section": "Giriş", "content": "..." }],
+  "keywords": ["..."],
+  "hashtags": ["#..."],
+  "thumbnailConcept": "Thumbnail fikri",
+  "hookLine": "İlk 5 saniye kanca cümlesi",
+  "callToAction": "Video sonu CTA"
+}
 ```
 
 ---
 
-## 📅 Günlük İçerik Planı
+## Instagram İçerik Modülü
 
-| Gün | İçerik Kategorisi |
-|-----|-------------------|
-| Pazartesi | Singer + Pfaff |
-| Salı | Karma |
-| Çarşamba | Singer + Pfaff |
-| Perşembe | Karma |
-| Cuma | Singer + Pfaff |
-| Cumartesi | Karma |
-| Pazar | Karma |
+### Format Türleri
 
----
+| Format | Anahtar |
+|---|---|
+| Reels | `reels` |
+| Karusel Gönderisi | `karusel` |
+| Teknik İpucu | `teknik_ipucu` |
+| Ürün Tanıtımı | `urun_tanitim` |
+| İlham ve Topluluk | `ilham_topluluk` |
 
-## 📈 Büyüme Stratejisi
+### Endpoint'ler
 
 ```
-YouTube (uzun format)
-    └── Instagram Reels (kısa format)
-            └── Story → YouTube link yönlendirmesi
+GET  /content/instagram/types
+GET  /content/instagram/ideas      → 7 günlük haftalık takvim
+POST /content/instagram/generate
 ```
 
-Her video üç farklı kanalda optimize edilmiş formatta yayımlanacak şekilde planlanmıştır.
+### Örnek İstek
+
+```json
+POST /content/instagram/generate
+{
+  "type": "reels",
+  "topic": "Overlok makinesi iplik takma",
+  "product": "Singer Elite SE017"
+}
+```
+
+### Dönen Alanlar (Reels örneği)
+
+```json
+{
+  "caption": "Kısa açıklama",
+  "fullCaption": "Tam açıklama metni",
+  "hashtags": ["#..."],
+  "reelsScript": [{ "second": "0-3", "visual": "...", "text": "...", "voiceover": "..." }],
+  "hookLine": "Kanca cümlesi",
+  "audioSuggestion": "Müzik önerisi",
+  "textOverlays": ["Ekran yazısı 1"],
+  "storyFollowup": "Story takibi fikri",
+  "cta": "Call to action"
+}
+```
+
+### Hashtag Stratejisi
+
+Her üretimde 30 hashtag gelir:
+- 5 niş hashtag (`#irfmak`, `#dikişmakinesiservisi` ...)
+- 10 orta ölçekli hashtag
+- 10 geniş hashtag
+- 5 trend / hedef kitle etiketi
 
 ---
 
-## 🗺️ Yol Haritası
+## Instagram Otomasyonu (Meta Graph API)
 
-- [ ] Instagram otomatik Reels paylaşımı (Meta API)
-- [ ] AI destekli caption ve hashtag üretimi
-- [ ] Otomatik thumbnail oluşturucu
-- [ ] Kısa + uzun format paralel video üretimi
-- [ ] Çok dilli içerik desteği
+Üretilen içerikleri Instagram'a otomatik göndermek için **Meta Graph API** kullanılır.
+
+### Kurulum Adımları
+
+**1. Facebook Developer hesabı aç**
+- [developers.facebook.com](https://developers.facebook.com) → Uygulama oluştur → "Business" türü seç
+
+**2. Instagram hesabını hazırla**
+- Instagram hesabı **Business veya Creator** olmalı (kişisel hesap çalışmaz)
+- Hesabı bir **Facebook Sayfası**'na bağla
+
+**3. App'e izinler ekle**
+App Ayarları → Permissions bölümünden şu izinleri iste:
+```
+instagram_basic
+instagram_content_publish
+pages_read_engagement
+pages_show_list
+```
+
+**4. Access Token al**
+- Graph API Explorer → Token Oluştur → Long-lived token'a çevir (60 gün geçerli)
+- Instagram Business hesabının `user_id`'sini al:
+```
+GET https://graph.facebook.com/v19.0/me/accounts?access_token=TOKEN
+```
+
+**5. `.env` dosyasına ekle**
+```env
+INSTAGRAM_ACCESS_TOKEN=your_long_lived_token
+INSTAGRAM_USER_ID=your_ig_business_user_id
+```
+
+### Gönderi Yayınlama Akışı
+
+```
+1. Medya Container Oluştur
+   POST /{ig-user-id}/media
+   → { image_url, caption } veya { video_url, media_type: "REELS" }
+   ← creation_id döner
+
+2. Container'ı Yayınla
+   POST /{ig-user-id}/media_publish
+   → { creation_id }
+   ← post_id döner
+```
+
+### Medya Barındırma
+
+Görsel ve video dosyaları **herkese açık bir URL'den** çekilmesi gerekir:
+- **Cloudinary** (önerilen — ücretsiz plan yeterli)
+- AWS S3 (public bucket)
+- Herhangi bir CDN
 
 ---
 
-## ⚠️ Önemli Notlar
+## İçerik Stüdyosu (Admin UI)
 
-> **Instagram Otomasyonu:** Meta Graph API erişimi ve onaylı bir uygulama gerektirir. Story paylaşımı API üzerinden desteklenmemektedir.
+`http://localhost:3000/content-studio.html` adresinde açılır.
 
-> **HeyGen:** Her video üretimi kredi tüketir. Kullanım öncesinde kota kontrolü yapılması önerilir.
-
-> **YouTube Refresh Token:** Token'ın süresi dolabileceğinden periyodik olarak yenilenmelidir.
+- YouTube / Instagram sekme geçişi
+- İçerik türü + konu + opsiyonel ürün girişi
+- "Haftalık İçerik Fikirleri" ile otomatik konu önerileri
+- Her alanda tek tık kopyalama
 
 ---
 
-<div align="center">
+## Proje Yapısı
 
-Geliştirici katkılarına açıktır. PR ve issue'lar memnuniyetle karşılanır.
+```
+irfmak-ai-agent/
+├── index.js              # Ana sunucu + satış asistanı
+├── youtubeContent.js     # YouTube içerik router
+├── instagramContent.js   # Instagram içerik router
+├── productCatalog.js     # Ürün kataloğu
+├── public/
+│   ├── index.html        # Chat widget sayfası
+│   ├── widget.js         # Embed widget
+│   ├── app.js            # Chat frontend
+│   ├── style.css         # Stiller
+│   └── content-studio.html  # Admin içerik paneli
+├── data/
+│   ├── sessions.json     # Oturum kayıtları
+│   └── handoffs.json     # Handoff kayıtları
+├── .env                  # API anahtarları (git'e ekleme)
+└── widget-test.html      # Widget test sayfası
+```
 
-**İrfmak Makina — Dikiş'te Güvenilir Adres**
+---
 
-</div>
+## Teknolojiler
+
+- **Node.js + Express** — sunucu
+- **OpenAI GPT-4.1-mini** — AI motor
+- **Meta Graph API** — Instagram otomasyonu
+- **WhatsApp API** — handoff entegrasyonu

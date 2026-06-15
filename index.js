@@ -1,45 +1,42 @@
-require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
+const dotenv = require("dotenv");
+const OpenAI = require("openai");
 const path = require("path");
 const crypto = require("crypto");
-const OpenAI = require("openai");
-const { initDb, getDb } = require("./db");
+const fs = require("fs");
 const { PRODUCT_CATALOG } = require("./productCatalog");
-const supabase = require("./supabase");
+const youtubeRouter = require("./youtubeContent");
+const instagramRouter = require("./instagramContent");
+
+dotenv.config();
 
 const app = express();
+const PORT = 3000;
+const WHATSAPP_NUMBER = "905336370137";
 
-const PORT = Number(process.env.PORT || 3000);
-const ADMIN_KEY = process.env.ADMIN_KEY || "change_this_admin_key";
-const WHATSAPP_NUMBER = String(process.env.WHATSAPP_NUMBER || "").replace(/\D/g, "");
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-if (!process.env.OPENAI_API_KEY) {
-  console.error("OPENAI_API_KEY eksik. .env dosyasını kontrol et.");
-  process.exit(1);
+app.use("/content/youtube", youtubeRouter);
+app.use("/content/instagram", instagramRouter);
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const dataDir = path.join(__dirname, "data");
+const sessionsFile = path.join(dataDir, "sessions.json");
+const handoffsFile = path.join(dataDir, "handoffs.json");
+
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+if (!fs.existsSync(sessionsFile)) {
+  fs.writeFileSync(sessionsFile, JSON.stringify({}, null, 2), "utf8");
 }
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const DATA_DIR = path.join(__dirname, "data");
-const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
-const HANDOFFS_FILE = path.join(DATA_DIR, "handoffs.json");
-const LEADS_FILE = path.join(DATA_DIR, "leads.json");
-
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-function ensureJsonFile(filePath, fallbackValue) {
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify(fallbackValue, null, 2), "utf8");
-  }
+if (!fs.existsSync(handoffsFile)) {
+  fs.writeFileSync(handoffsFile, JSON.stringify([], null, 2), "utf8");
 }
-
-ensureJsonFile(SESSIONS_FILE, {});
-ensureJsonFile(HANDOFFS_FILE, []);
-ensureJsonFile(LEADS_FILE, []);
 
 function readJson(filePath, fallbackValue) {
   try {
@@ -54,105 +51,403 @@ function writeJson(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
 }
 
-function nowIso() { return new Date().toISOString(); }
+let sessions = readJson(sessionsFile, {});
+let handoffs = readJson(handoffsFile, []);
 
-function safeText(value) {
-  if (value === undefined || value === null || value === "") return null;
-  return String(value);
+const SYSTEM_PROMPT = `
+Sen İrfmak web sitesinin yapay zeka satış danışmanı ve ürün yönlendirme asistanısın.
+
+Temel rolün:
+- Kullanıcının ihtiyacını kısa ve net şekilde anlamak
+- Önce sohbet içinde yardımcı olmak
+- Uygun ürün, kategori veya kullanım bilgisi önermek
+- Gerekirse ürün sayfasına veya ödeme adımına yönlendirme teklif etmek
+- Yetkiliyi yalnızca gerekli durumlarda yönlendirmek
+
+İrfmak bağlamı:
+- Ev tipi dikiş makineleri
+- Sanayi tipi dikiş makineleri
+- Overlok
+- Reçme
+- Zigzag
+- Çift iğne
+- Yedek parça
+- Ayak çeşitleri
+- Dikiş iğneleri
+- Kumaş kesim motorları ve tekstil kesim ekipmanları
+
+Yorumlama kuralları:
+- "kesim" denince öncelikle kumaş / tekstil kesimi bağlamında düşün
+- ahşap, metal, CNC gibi alakasız alanlara kayma
+- "sanayi makinesi" denince tekstil ve dikiş üretim makinelerini düşün
+- bilmediğin model, fiyat, stok veya teknik özellik uydurma
+- belirsizse kısa netleştirici soru sor
+
+Satış yaklaşımı:
+- hemen yetkiliye atma
+- önce danışman gibi davran
+- bütçe, kullanım amacı, kumaş tipi, kullanım yoğunluğu gibi bilgilere göre yönlendir
+- kullanıcı hazırsa ürün sayfasına veya ödeme adımına geçmek isteyip istemediğini sorabilirsin
+
+Yetkiliye devir yalnızca şu durumlarda:
+- toplu satış / toptan alım / bayi
+- özel fiyat / teklif
+- servis
+- arıza
+- teknik uyumluluk için kesin teyit
+- kullanıcı açıkça yetkiliyle görüşmek istediğini söylerse
+
+Handoff akışı:
+1. Önce kullanıcıdan konu / ihtiyaç detayını al
+2. Sonra ad soyad iste
+3. Tek kelimelik isim kabul etme
+4. Sonra telefon numarası iste
+5. Bilgiler tamamlanınca teşekkür et ve WhatsApp'tan devam butonu göster
+
+Cevap stili:
+- kısa
+- net
+- profesyonel
+- sıcak
+- satış odaklı
+`;
+
+function saveSessions() {
+  writeJson(sessionsFile, sessions);
+}
+
+function saveHandoffs() {
+  writeJson(handoffsFile, handoffs);
+}
+
+function createNewSession() {
+  const sessionId = crypto.randomUUID();
+
+  sessions[sessionId] = {
+    messages: [
+      {
+        role: "system",
+        content: SYSTEM_PROMPT,
+      },
+    ],
+    state: {
+      handoffRequired: false,
+      handoffReason: null,
+      handoffReasonText: null,
+      awaitingReason: false,
+      awaitingName: false,
+      awaitingPhone: false,
+      customerName: null,
+      customerPhone: null,
+      handoffCompleted: false,
+      collected: {
+        budgetLevel: null,
+        machineType: null,
+        fabricType: null,
+        usageHours: null,
+        useCase: null,
+      },
+    },
+    createdAt: new Date().toISOString(),
+  };
+
+  saveSessions();
+  return sessionId;
+}
+
+function getSession(sessionId) {
+  return sessions[sessionId];
 }
 
 function normalizeText(text) {
   return String(text || "").toLocaleLowerCase("tr-TR");
 }
 
-function getSessions() { return readJson(SESSIONS_FILE, {}); }
-function getHandoffs() { return readJson(HANDOFFS_FILE, []); }
-function getLeads() { return readJson(LEADS_FILE, []); }
-function saveSessions(data) { writeJson(SESSIONS_FILE, data); }
-function saveHandoffs(data) { writeJson(HANDOFFS_FILE, data); }
-function saveLeads(data) { writeJson(LEADS_FILE, data); }
+function normalizeUserMessage(text) {
+  return String(text || "")
+    .replace(/\b2o\b/gi, "20")
+    .replace(/\b3o\b/gi, "30")
+    .replace(/\b4o\b/gi, "40")
+    .replace(/\b5o\b/gi, "50")
+    .replace(/\b6o\b/gi, "60")
+    .replace(/\b7o\b/gi, "70")
+    .replace(/\b8o\b/gi, "80")
+    .replace(/\b9o\b/gi, "90")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
-  .split(",").map((v) => v.trim()).filter(Boolean);
+function resetCollectedData(session) {
+  session.state.collected = {
+    budgetLevel: null,
+    machineType: null,
+    fabricType: null,
+    usageHours: null,
+    useCase: null,
+  };
+}
 
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (!allowedOrigins.length) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(null, true);
-  },
-  credentials: true,
-}));
+function resetHandoffState(session) {
+  session.state.handoffRequired = false;
+  session.state.handoffReason = null;
+  session.state.handoffReasonText = null;
+  session.state.awaitingReason = false;
+  session.state.awaitingName = false;
+  session.state.awaitingPhone = false;
+  session.state.customerName = null;
+  session.state.customerPhone = null;
+  session.state.handoffCompleted = false;
+}
 
-app.use(express.json({ limit: "1mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+function isNewSearchIntent(message) {
+  const text = normalizeText(message);
+
+  const triggers = [
+    "ev tipi",
+    "sanayi tipi",
+    "sanayi makine",
+    "overlok",
+    "reçme",
+    "recme",
+    "zigzag",
+    "çift iğne",
+    "cift iğne",
+    "düz dikiş",
+    "duz dikis",
+    "kesim",
+    "yedek parça",
+    "parça lazım",
+    "makine arıyorum",
+    "makine öner",
+    "makinesi öner",
+    "iğne lazım",
+    "ayak lazım",
+    "ütü",
+  ];
+
+  return triggers.some((item) => text.includes(item));
+}
+
+function detectHandoffReason(message) {
+  const text = normalizeText(message);
+
+  if (
+    text.includes("yetkiliyle görüşmek istiyorum") ||
+    text.includes("yetkili ile görüşmek istiyorum") ||
+    text.includes("yetkiliye bağla") ||
+    text.includes("temsilciye bağla")
+  ) {
+    return "yetkili_talebi";
+  }
+
+  if (
+    text.includes("toplu") ||
+    text.includes("toplu alım") ||
+    text.includes("toplu satın alma") ||
+    text.includes("bayi") ||
+    text.includes("toptan") ||
+    /\b([1-9][0-9]|[1-9][0-9]{2,})\s*(adet|tane)\b/.test(text)
+  ) {
+    return "toplu_satis";
+  }
+
+  if (
+    text.includes("özel fiyat") ||
+    text.includes("özel teklif") ||
+    text.includes("indirim") ||
+    text.includes("iskonto")
+  ) {
+    return "ozel_fiyat";
+  }
+
+  if (text.includes("teklif") || text.includes("fiyat teklifi")) {
+    return "teklif";
+  }
+
+  if (
+    text.includes("uyumlu mu") ||
+    text.includes("uyar mı") ||
+    text.includes("uyumluluk") ||
+    text.includes("bu parça olur mu") ||
+    text.includes("bu ayak olur mu") ||
+    text.includes("bu makineye uyar mı")
+  ) {
+    return "teknik_uyumluluk";
+  }
+
+  if (text.includes("servis")) return "servis";
+
+  if (
+    text.includes("arıza") ||
+    text.includes("arızalı") ||
+    text.includes("bozuldu") ||
+    text.includes("çalışmıyor")
+  ) {
+    return "ariza";
+  }
+
+  return null;
+}
 
 function reasonLabel(reason) {
-  const map = {
-    yetkili: "Yetkili görüşme",
+  const labels = {
+    yetkili_talebi: "Yetkili ile görüşme talebi",
     toplu_satis: "Toplu satış",
+    ozel_fiyat: "Özel fiyat talebi",
     teklif: "Teklif talebi",
+    teknik_uyumluluk: "Teknik uyumluluk",
     servis: "Servis talebi",
-    teknik: "Teknik destek",
-    urun: "Ürün danışma",
+    ariza: "Arıza / teknik destek",
+    ai_yetersiz: "AI yetersiz kaldı",
   };
-  return map[reason] || "Genel talep";
+  return labels[reason] || "Yetkili desteği";
 }
 
-function buildWhatsappLink(prefillText = "Merhaba") {
-  if (!WHATSAPP_NUMBER) return null;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(prefillText)}`;
+function aiSuggestsHandoff(reply) {
+  const text = normalizeText(reply);
+
+  const strongTriggers = [
+    "toplu alım için yetkili",
+    "özel fiyat için yetkili",
+    "teklif için yetkili",
+    "servis ekibimiz",
+    "arıza için teknik destek",
+    "bu konuda yetkili ile görüşmeniz gerekir",
+  ];
+
+  return strongTriggers.some((item) => text.includes(item));
 }
 
-function getOrCreateSession(sessionId) {
-  const sessions = getSessions();
-  if (!sessionId || !sessions[sessionId]) {
-    const newId = crypto.randomUUID();
-    sessions[newId] = {
-      messages: [],
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-      state: { customerName: null, customerPhone: null },
-    };
-    saveSessions(sessions);
-    return { id: newId, session: sessions[newId], sessions };
-  }
-  return { id: sessionId, session: sessions[sessionId], sessions };
+function extractPhoneNumber(text) {
+  const match = String(text || "").match(/(\+?\d[\d\s()-]{8,}\d)/);
+  return match ? match[0].trim() : null;
 }
 
-function detectIntent(message) {
+function cleanPhone(phone) {
+  return String(phone || "").replace(/[^\d+]/g, "");
+}
+
+function normalizeTurkishPhone(phoneText) {
+  return String(phoneText || "").replace(/\D/g, "");
+}
+
+function isValidTurkishPhone(phoneText) {
+  const normalized = normalizeTurkishPhone(phoneText);
+  return /^0\d{10}$/.test(normalized);
+}
+
+function looksLikeFullName(text) {
+  const cleaned = String(text || "").trim();
+  if (cleaned.length < 5) return false;
+  if (extractPhoneNumber(cleaned)) return false;
+
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length < 2 || parts.length > 4) return false;
+
+  return parts.every((w) => /^[a-zA-ZçğıöşüÇĞİÖŞÜ]+$/.test(w));
+}
+
+function detectBudgetLevel(message) {
   const text = normalizeText(message);
-  if (text.includes("yetkili") || text.includes("temsilci") || text.includes("görüşmek istiyorum") || text.includes("sizi arayın")) return "yetkili";
-  if (text.includes("toplu") || text.includes("toptan") || /\b\d+\s*(adet|tane)\b/.test(text)) return "toplu_satis";
-  if (text.includes("teklif")) return "teklif";
-  if (text.includes("servis")) return "servis";
-  if (text.includes("arıza") || text.includes("ariza") || text.includes("teknik")) return "teknik";
-  return "urun";
+
+  if (text.includes("düşük bütçe") || text.includes("uygun fiyat")) return "dusuk";
+  if (text.includes("orta bütçe")) return "orta";
+  if (text.includes("yüksek bütçe") || text.includes("üst segment")) return "yuksek";
+
+  const match = text.match(/(\d{4,6})\s*(tl|₺)?/i);
+  if (!match) return null;
+
+  const amount = Number(match[1]);
+  if (amount <= 15000) return "dusuk";
+  if (amount <= 30000) return "orta";
+  return "yuksek";
 }
 
 function detectMachineTypes(message) {
   const text = normalizeText(message);
   const found = [];
-  if (text.includes("ev tipi") || text.includes("ev için") || text.includes("evde")) found.push("ev_tipi");
-  if (text.includes("sanayi")) found.push("sanayi_genel");
-  if (text.includes("overlok") || text.includes("overlock")) found.push("overlok");
+
+  if (text.includes("ev tipi")) found.push("ev_tipi");
+  if (text.includes("overlok")) found.push("overlok");
   if (text.includes("reçme") || text.includes("recme")) found.push("recme");
   if (text.includes("zigzag")) found.push("zigzag");
   if (text.includes("çift iğne") || text.includes("cift iğne")) found.push("cift_igne");
   if (text.includes("düz dikiş") || text.includes("duz dikis")) found.push("duz_dikis");
   if (text.includes("kesim")) found.push("kesim");
-  if (text.includes("ütü") || text.includes("utu")) found.push("utu");
-  if (text.includes("parça") || text.includes("yedek parça") || text.includes("iğne") || text.includes("ayak")) found.push("parca");
+  if (
+    text.includes("parça") ||
+    text.includes("yedek parça") ||
+    text.includes("ayak") ||
+    text.includes("mekik") ||
+    text.includes("masura") ||
+    text.includes("iğne")
+  ) {
+    found.push("parca");
+  }
+
+  if (text.includes("sanayi tipi") || text.includes("sanayi makinesi")) {
+    if (found.length === 0) found.push("sanayi_genel");
+  }
+
   return [...new Set(found)];
+}
+
+function detectFabricType(message) {
+  const text = normalizeText(message);
+  const fabrics = [
+    "saten",
+    "penye",
+    "pamuk",
+    "kot",
+    "deri",
+    "ince kumaş",
+    "kalın kumaş",
+    "örme kumaş",
+    "esnek kumaş",
+    "kumaş",
+  ];
+  return fabrics.find((f) => text.includes(f)) || null;
+}
+
+function detectUsageHours(message) {
+  const text = normalizeText(message);
+  const match = text.match(/(\d{1,2})\s*(saat)/i);
+  if (match) return Number(match[1]);
+  return null;
+}
+
+function collectSessionData(session, message) {
+  const machineTypes = detectMachineTypes(message);
+  const budgetLevel = detectBudgetLevel(message);
+  const fabricType = detectFabricType(message);
+  const usageHours = detectUsageHours(message);
+
+  if (machineTypes.length > 0) session.state.collected.machineType = machineTypes;
+  if (budgetLevel) session.state.collected.budgetLevel = budgetLevel;
+  if (fabricType) session.state.collected.fabricType = fabricType;
+  if (usageHours) session.state.collected.usageHours = usageHours;
+}
+
+function getBudgetLabel(level) {
+  if (level === "dusuk") return "düşük bütçe";
+  if (level === "orta") return "orta bütçe";
+  if (level === "yuksek") return "yüksek bütçe";
+  return "belirtilmemiş bütçe";
 }
 
 function productMatchesType(product, requestedTypes) {
   if (!requestedTypes || requestedTypes.length === 0) return true;
+
   for (const t of requestedTypes) {
     if (t === "sanayi_genel") {
-      if (String(product.category || "").startsWith("sanayi_") || ["overlok", "recme", "zigzag", "cift_igne", "duz_dikis"].includes(product.machineType)) return true;
+      if (
+        product.category.startsWith("sanayi_") ||
+        ["overlok", "recme", "zigzag", "cift_igne", "duz_dikis"].includes(product.machineType)
+      ) {
+        return true;
+      }
     }
+
     if (t === "ev_tipi" && product.machineType === "ev_tipi") return true;
     if (t === "overlok" && product.machineType === "overlok") return true;
     if (t === "recme" && product.machineType === "recme") return true;
@@ -160,486 +455,378 @@ function productMatchesType(product, requestedTypes) {
     if (t === "cift_igne" && product.machineType === "cift_igne") return true;
     if (t === "duz_dikis" && product.machineType === "duz_dikis") return true;
     if (t === "kesim" && product.machineType === "kesim") return true;
-    if (t === "utu" && product.machineType === "utu") return true;
     if (t === "parca" && (product.machineType === "parca" || product.machineType === "igne")) return true;
   }
+
   return false;
 }
 
-function recommendProducts(message) {
-  const requestedTypes = detectMachineTypes(message);
-  
-  let filtered = requestedTypes.length > 0
-    ? PRODUCT_CATALOG.filter((p) => p.inStock && productMatchesType(p, requestedTypes))
-    : PRODUCT_CATALOG.filter((p) => p.inStock);
+function scoreProduct(product, collected) {
+  let score = 0;
 
-  if (!filtered.length) {
-    filtered = PRODUCT_CATALOG.filter((p) => p.inStock);
+  if (collected.budgetLevel && product.budgetLevel === collected.budgetLevel) score += 3;
+
+  if (
+    collected.fabricType &&
+    product.fabricTypes.some((f) => collected.fabricType.includes(f) || f.includes(collected.fabricType))
+  ) {
+    score += 2;
   }
 
-  return filtered.slice(0, 5);
+  if (collected.usageHours) {
+    if (collected.usageHours >= 6 && product.machineType !== "ev_tipi") score += 2;
+    if (collected.usageHours < 6 && product.machineType === "ev_tipi") score += 1;
+  }
+
+  return score;
 }
 
-function buildProductHint(message) {
-  const products = recommendProducts(message);
-  const fallback = products.length
-    ? products
-    : PRODUCT_CATALOG.filter(p => p.inStock);
+function recommendProducts(collected) {
+  const requestedTypes = collected.machineType || [];
+  let filtered = PRODUCT_CATALOG.filter((p) => productMatchesType(p, requestedTypes));
 
-  return fallback
-    .slice(0, 8)
-    .map((p, i) => `${i + 1}. ${p.title} - ${p.priceText} - ${p.url}`)
+  if (filtered.length === 0) filtered = PRODUCT_CATALOG;
+
+  return filtered
+    .map((p) => ({ ...p, _score: scoreProduct(p, collected) }))
+    .sort((a, b) => b._score - a._score)
+    .slice(0, 5);
+}
+
+function buildProductRecommendationReply(session) {
+  const collected = session.state.collected;
+  const recommended = recommendProducts(collected);
+  if (!recommended || recommended.length === 0) return null;
+
+  const intro = [];
+  if (collected.machineType?.length) intro.push(`Makine tipi: ${collected.machineType.join(", ")}`);
+  if (collected.fabricType) intro.push(`Kumaş tipi: ${collected.fabricType}`);
+  if (collected.budgetLevel) intro.push(`Bütçe seviyesi: ${getBudgetLabel(collected.budgetLevel)}`);
+  if (collected.usageHours) intro.push(`Günlük kullanım: ${collected.usageHours} saat`);
+
+  const listText = recommended
+    .map((p, i) => `${i + 1}. ${p.title} (${p.priceText})`)
     .join("\n");
+
+  return `${intro.length ? intro.join(" | ") + "\n\n" : ""}İhtiyacınıza göre öne çıkabilecek seçenekler:
+
+${listText}
+
+İsterseniz bu seçeneklerden birine göre ürün sayfasına yönlendirebilirim. Hazırsanız ödeme adımına geçmeniz için de uygun yönlendirme yapabilirim.`;
 }
 
-/* SQLITE HELPERS */
+function summarizeForHandoff(session) {
+  const state = session.state;
+  const msgs = session.messages.filter((m) => m.role !== "system");
+  const userMessages = msgs.filter((m) => m.role === "user").map((m) => m.content);
 
-async function dbOturumOlusturVeyaGuncelle(oturumKodu) {
-  const db = await getDb();
-  const now = nowIso();
-  const mevcut = await db.get(`SELECT id FROM sohbet_oturumlari WHERE oturum_kodu = ?`, [oturumKodu]);
-  if (mevcut) {
-    await db.run(`UPDATE sohbet_oturumlari SET guncellenme_tarihi = ? WHERE oturum_kodu = ?`, [now, oturumKodu]);
-    return mevcut.id;
-  }
-  const result = await db.run(
-    `INSERT INTO sohbet_oturumlari (oturum_kodu, olusturulma_tarihi, guncellenme_tarihi, durum) VALUES (?, ?, ?, ?)`,
-    [oturumKodu, now, now, "aktif"]
+  const firstUser = userMessages[0] || "-";
+  const lastUser = userMessages[userMessages.length - 1] || "-";
+
+  return `
+Talep: ${firstUser}
+Kategori: ${reasonLabel(state.handoffReason)}
+Müşteri Açıklaması: ${state.handoffReasonText || "-"}
+Son Mesaj: ${lastUser}
+`.trim();
+}
+
+function getLastMessages(messages, count = 4) {
+  return messages
+    .filter((m) => m.role !== "system")
+    .slice(-count)
+    .map((m) => `${m.role === "user" ? "Müşteri" : "Asistan"}: ${m.content}`);
+}
+
+function generateCustomerWhatsAppLink(session) {
+  const state = session.state;
+  const text = `
+Merhaba, ben ${state.customerName}.
+Siteniz üzerinden bilgi bıraktım.
+
+Konu: ${state.handoffReasonText || reasonLabel(state.handoffReason)}
+`.trim();
+
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+}
+
+function storeHandoff(sessionId) {
+  const session = getSession(sessionId);
+  const state = session.state;
+
+  const existing = handoffs.find(
+    (item) =>
+      item.sessionId === sessionId &&
+      item.customerPhone === state.customerPhone &&
+      item.completed === true
   );
-  return result.lastID;
+
+  if (existing) return existing;
+
+  const record = {
+    id: crypto.randomUUID(),
+    sessionId,
+    customerName: state.customerName,
+    customerPhone: state.customerPhone,
+    handoffReason: state.handoffReason,
+    handoffReasonLabel: reasonLabel(state.handoffReason),
+    handoffReasonText: state.handoffReasonText,
+    summary: summarizeForHandoff(session),
+    lastMessages: getLastMessages(session.messages, 4),
+    customerWhatsappLink: generateCustomerWhatsAppLink(session),
+    completed: true,
+    createdAt: new Date().toISOString(),
+  };
+
+  handoffs.push(record);
+  saveHandoffs();
+
+  return record;
 }
 
-async function dbMesajKaydet(oturumKodu, gonderenTipi, mesaj) {
-  const db = await getDb();
-  const oturumId = await dbOturumOlusturVeyaGuncelle(oturumKodu);
-  await db.run(
-    `INSERT INTO sohbet_mesajlari (oturum_id, gonderen_tipi, mesaj, tarih) VALUES (?, ?, ?, ?)`,
-    [oturumId, gonderenTipi, mesaj, nowIso()]
-  );
+function finalizeHandoff(currentSessionId, session) {
+  const handoffRecord = storeHandoff(currentSessionId);
+
+  session.state.handoffCompleted = true;
+  session.state.awaitingReason = false;
+  session.state.awaitingName = false;
+  session.state.awaitingPhone = false;
+
+  return {
+    reply: "Teşekkür ederim. Bilgilerinizi aldım. Yetkilimiz en kısa sürede sizinle iletişime geçecektir.",
+    handoffRequired: true,
+    needContactInfo: false,
+    showWhatsappButton: true,
+    whatsappLink: handoffRecord.customerWhatsappLink,
+  };
 }
 
-async function dbMusteriTalebiKaydet({ oturumKodu, musteriAdi, musteriTelefonu, talepTuru, talepEtiketi, aciklama, durum = "yeni" }) {
-  const db = await getDb();
-  await db.run(
-    `INSERT INTO musteri_talepleri (oturum_kodu, musteri_adi, musteri_telefonu, talep_turu, talep_etiketi, aciklama, durum, olusturulma_tarihi) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [oturumKodu, safeText(musteriAdi), safeText(musteriTelefonu), safeText(talepTuru), safeText(talepEtiketi), safeText(aciklama), durum, nowIso()]
-  );
+function handoffNeedDetected(message, session) {
+  const detected = detectHandoffReason(message);
+  if (!detected) return null;
+
+  session.state.handoffRequired = true;
+  session.state.handoffReason = detected;
+  session.state.awaitingReason = true;
+  session.state.awaitingName = false;
+  session.state.awaitingPhone = false;
+  session.state.handoffReasonText = null;
+  session.state.customerName = null;
+  session.state.customerPhone = null;
+  session.state.handoffCompleted = false;
+
+  return {
+    reply:
+      "Bu konuda sizi yetkilimize iletmem daha doğru olur. Hangi özellikte ürün istediğinizi ve ne için alım yapacağınızı kısaca paylaşır mısınız?",
+    handoffRequired: true,
+    needContactInfo: true,
+    showWhatsappButton: false,
+    whatsappLink: null,
+  };
 }
 
-async function dbYetkiliYonlendirmeKaydet({ oturumKodu, musteriAdi, musteriTelefonu, yonlendirmeNedeni, yonlendirmeEtiketi, ozet, whatsappLinki, tamamlandiMi = 1 }) {
-  const db = await getDb();
-  await db.run(
-    `INSERT INTO yetkili_yonlendirmeleri (oturum_kodu, musteri_adi, musteri_telefonu, yonlendirme_nedeni, yonlendirme_etiketi, ozet, whatsapp_linki, tamamlandi_mi, olusturulma_tarihi) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [oturumKodu, safeText(musteriAdi), safeText(musteriTelefonu), safeText(yonlendirmeNedeni), safeText(yonlendirmeEtiketi), safeText(ozet), safeText(whatsappLinki), tamamlandiMi, nowIso()]
-  );
-}
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
-async function dbUrunTalebiKaydet({ oturumKodu, urunAdi, kategori, makineTipi }) {
-  const db = await getDb();
-  await db.run(
-    `INSERT INTO urun_talepleri (oturum_kodu, urun_adi, kategori, makine_tipi, talep_tarihi) VALUES (?, ?, ?, ?, ?)`,
-    [oturumKodu, safeText(urunAdi), safeText(kategori), safeText(makineTipi), nowIso()]
-  );
-}
+app.get("/admin/handoffs", (req, res) => {
+  res.json(handoffs);
+});
 
-/* CHAT */
+app.get("/admin/sessions", (req, res) => {
+  res.json(sessions);
+});
 
-app.post("/api/chat", async (req, res) => {
+app.post("/chat", async (req, res) => {
   try {
-    const message = String(req.body.message || "").trim();
-    const incomingSessionId = req.body.sessionId || null;
+    const rawMessage = req.body.message;
+    const message = normalizeUserMessage(rawMessage || "");
+    const { sessionId } = req.body;
 
-    if (!message) return res.status(400).json({ error: "Mesaj gerekli" });
+    if (!message.trim()) {
+      return res.status(400).json({ error: "Mesaj gerekli" });
+    }
 
-    const { id, session, sessions } = getOrCreateSession(incomingSessionId);
+    let currentSessionId = sessionId;
+    if (!currentSessionId || !sessions[currentSessionId]) {
+      currentSessionId = createNewSession();
+    }
 
-    session.messages.push({ role: "user", content: message, createdAt: nowIso() });
-    session.updatedAt = nowIso();
-    saveSessions(sessions);
+    let session = getSession(currentSessionId);
+    if (!session || !session.messages || !session.state) {
+      currentSessionId = createNewSession();
+      session = getSession(currentSessionId);
+    }
 
-    await dbMesajKaydet(id, "kullanici", message);
+    if (isNewSearchIntent(message)) {
+      resetCollectedData(session);
+      resetHandoffState(session);
+    }
 
-    const intent = detectIntent(message);
-    let reply = "";
-    let showWhatsappButton = false;
-    let whatsappLink = null;
-    let productLinks = [];
+    collectSessionData(session, message);
 
-    if (["yetkili", "toplu_satis", "teklif", "servis", "teknik"].includes(intent)) {
-      const label = reasonLabel(intent);
+    const state = session.state;
 
-      if (intent === "yetkili") reply = "Elbette. Sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
-      else if (intent === "toplu_satis") reply = "Toplu satış talebiniz için en doğru yönlendirme yetkilimiz olacaktır. WhatsApp Business üzerinden devam edebilirsiniz.";
-      else if (intent === "teklif") reply = "Teklif talebiniz için sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
-      else if (intent === "servis") reply = "Servis talebiniz için sizi yetkiliye yönlendiriyorum. WhatsApp Business üzerinden devam edebilirsiniz.";
-      else reply = "Teknik destek için sizi yetkiliye yönlendirebilirim. WhatsApp Business üzerinden devam edebilirsiniz.";
+    session.messages.push({
+      role: "user",
+      content: message,
+    });
 
-      showWhatsappButton = true;
-      whatsappLink = buildWhatsappLink(`Merhaba, ${label.toLowerCase()} konusunda görüşmek istiyorum.`);
+    let result = null;
 
-      const handoffs = getHandoffs();
-      handoffs.push({
-        id: crypto.randomUUID(),
-        sessionId: id,
-        customerName: session.state?.customerName || "Bilinmiyor",
-        customerPhone: session.state?.customerPhone || "",
-        handoffReason: intent,
-        handoffReasonLabel: label,
-        handoffReasonText: message,
-        summary: message,
-        lastMessages: session.messages.slice(-4),
-        customerWhatsappLink: whatsappLink || "",
-        completed: true,
-        createdAt: nowIso(),
-      });
-      saveHandoffs(handoffs);
+    if (!state.awaitingReason && !state.awaitingName && !state.awaitingPhone) {
+      const directHandoff = handoffNeedDetected(message, session);
+      if (directHandoff) result = directHandoff;
+    }
 
-      const leads = getLeads();
-      leads.push({
-        id: crypto.randomUUID(),
-        sessionId: id,
-        customerName: session.state?.customerName || "Bilinmiyor",
-        customerPhone: session.state?.customerPhone || "",
-        reason: intent,
-        reasonLabel: label,
-        detail: message,
-        status: "yeni",
-        createdAt: nowIso(),
-      });
-      saveLeads(leads);
+    if (!result && state.awaitingReason && !state.handoffReasonText) {
+      if (message.trim().length < 3) {
+        result = {
+          reply: "Kısaca hangi özellikte ve ne amaçla alım yapmak istediğinizi yazar mısınız?",
+          handoffRequired: true,
+          needContactInfo: true,
+          showWhatsappButton: false,
+        };
+      } else {
+        state.handoffReasonText = message.trim();
+        state.awaitingReason = false;
+        state.awaitingName = true;
 
-      try {
-        await dbYetkiliYonlendirmeKaydet({
-          oturumKodu: id,
-          musteriAdi: session.state?.customerName || "Bilinmiyor",
-          musteriTelefonu: session.state?.customerPhone || "",
-          yonlendirmeNedeni: intent,
-          yonlendirmeEtiketi: label,
-          ozet: message,
-          whatsappLinki: whatsappLink || "",
-          tamamlandiMi: 1,
-        });
-      } catch (dbError) {
-        console.error("SQLite yönlendirme kayıt hatası:", dbError.message);
+        result = {
+          reply: "Teşekkür ederim. Şimdi ad soyad bilginizi paylaşabilir misiniz?",
+          handoffRequired: true,
+          needContactInfo: true,
+          showWhatsappButton: false,
+        };
       }
+    }
 
-      try {
-        await dbMusteriTalebiKaydet({
-          oturumKodu: id,
-          musteriAdi: session.state?.customerName || "Bilinmiyor",
-          musteriTelefonu: session.state?.customerPhone || "",
-          talepTuru: intent,
-          talepEtiketi: label,
-          aciklama: message,
-          durum: "yeni",
-        });
-      } catch (dbError) {
-        console.error("SQLite talep kayıt hatası:", dbError.message);
+    if (!result && state.awaitingName && !state.customerName) {
+      if (!looksLikeFullName(message.trim())) {
+        result = {
+          reply: "Ad soyad bilginizi ad ve soyad olacak şekilde paylaşır mısınız? Örneğin: Ahmet Yılmaz",
+          handoffRequired: true,
+          needContactInfo: true,
+          showWhatsappButton: false,
+        };
+      } else {
+        state.customerName = message.trim();
+        state.awaitingName = false;
+        state.awaitingPhone = true;
+
+        result = {
+          reply: `Teşekkür ederim ${state.customerName}. Şimdi telefon numaranızı paylaşabilir misiniz?`,
+          handoffRequired: true,
+          needContactInfo: true,
+          showWhatsappButton: false,
+        };
       }
+    }
 
-    } else {
-      const recommended = recommendProducts(message);
-      const productHint = buildProductHint(message);
+    if (!result && state.awaitingPhone && !state.customerPhone) {
+      const normalizedPhone = normalizeTurkishPhone(message);
 
-      const systemPrompt = `
-Sen İrfmak web sitesi için çalışan satış odaklı bir yapay zeka asistanısın.
+      if (isValidTurkishPhone(message)) {
+        state.customerPhone = normalizedPhone;
+        result = finalizeHandoff(currentSessionId, session);
+      } else {
+        result = {
+          reply: "Telefon numaranızı 11 haneli ve başında 0 olacak şekilde paylaşabilir misiniz? Örneğin: 0555 333 22 11",
+          handoffRequired: true,
+          needContactInfo: true,
+          showWhatsappButton: false,
+        };
+      }
+    }
 
-Temel görevin:
-- Kullanıcının ihtiyacını hızlıca anlamak
-- Yalnızca web sitesinde bulunan ürünleri baz alarak öneri sunmak
-- Ürün varsa ilgili ürün linkini paylaşmak
-- Stok bilgisi varsa net şekilde “stokta var” veya “stokta yok” demek
-- Stokta olmayan ürünlerde alternatif ürün önermek veya kullanıcıyı yetkiliye yönlendirmek
-- Kullanıcıyı satın alma sürecine yaklaştırmak
-- Gerektiğinde ödeme, sipariş, ürün karşılaştırma, teknik destek ve yetkili yönlendirmesi yapmak
+    if (!result) {
+      const localRecommendation = buildProductRecommendationReply(session);
+      const recentMessages = session.messages.slice(-20);
 
-Davranış kuralları:
-1. Sadece sana verilen ürün verisini, stok verisini, kategori verisini ve linkleri kullan.
-2. Asla web sitesinde olmayan ürün uydurma.
-3. Asla emin olmadığın stok bilgisini kesinmiş gibi söyleme.
-4. Bir ürün için stok bilgisi yoksa “stok bilgisi şu anda doğrulanamıyor” de ve kullanıcıyı yetkiliye yönlendir.
-5. Kullanıcı ürün arıyorsa önce ihtiyacı netleştir:
-   - ev tipi mi
-   - sanayi tipi mi
-   - yedek parça mı
-   - marka/model belli mi
-   - bütçe veya kullanım amacı nedir
-6. Mümkün olduğunda tek cevapta şunları ver:
-   - kısa ihtiyaç özeti
-   - en uygun ürün
-   - ürün linki
-   - stok durumu
-   - varsa kısa satın alma yönlendirmesi
-7. Kullanıcı kararsızsa en fazla 2-3 uygun ürün öner.
-8. Kullanıcı “hemen almak istiyorum”, “satın alacağım”, “ödeme”, “sipariş”, “link”, “sepete git” gibi bir niyet gösterirse satış odaklı ilerle:
-   - en uygun ürün linkini ver
-   - satın alma adımını net söyle
-   - gerekiyorsa yetkili veya WhatsApp yönlendirmesi yap
-9. Kullanıcı aradığı ürün sitede yoksa:
-   - bunu açıkça söyle
-   - benzer kategori veya alternatif öner
-   - istenirse yetkiliye yönlendir
-10. Kullanıcı teknik servis, bakım, parça, iğne, aksesuar, arıza veya uyumluluk sorarsa ürün satışı yerine destek odaklı ilerle.
-11. Kısa, net, güven veren ve satışa destek olan bir üslup kullan.
-12. Gereksiz uzun açıklama yapma.
-13. Her zaman Türkçe cevap ver.
-
-Cevap formatı:
-- Doğrudan kullanıcıya hitap et
-- Kısa ve profesyonel ol
-- Uygunsa madde değil normal kısa paragraf kullan
-- Ürün önerirken şu mantığı uygula:
-
-Eğer uygun ürün bulunduysa:
-“Aradığınız ürüne uygun seçenek şu olabilir:
-[ÜRÜN_ADI]
-Link: [ÜRÜN_LINKI]
-Stok durumu: [STOKTA VAR / STOKTA YOK / STOK BİLGİSİ DOĞRULANAMADI]
-
-İsterseniz satın alma için sizi ilgili ürün sayfasına yönlendirebilirim.”
-
-Eğer ürün bulunamadıysa:
-“Aradığınız ürünü sitede bulamadım. İsterseniz benzer bir alternatif önerebilirim ya da sizi yetkili ekibe yönlendirebilirim.”
-
-Eğer stok yoksa:
-“Bu ürün şu anda stokta görünmüyor. Dilerseniz benzer alternatif ürün önerebilirim veya stok teyidi için sizi yetkili ekibe yönlendirebilirim.”
-
-Satış hedefi:
-- Kullanıcıyı doğru ürüne yönlendir
-- Kararsızlığı azalt
-- Güven ver
-- Uydurma bilgi verme
-- Uygun anda ürün linki vererek satın alma aksiyonunu hızlandır
-Mevcut ürünler (SADECE BUNLAR):
-${productHint}
-`;
-
-      const recentMessages = session.messages
-        .slice(-8)
-        .map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content }));
-
-      const completion = await openai.chat.completions.create({
-        model: OPENAI_MODEL,
-        temperature: 0.6,
-        messages: [{ role: "system", content: systemPrompt }, ...recentMessages],
+      const response = await openai.chat.completions.create({
+        model: "gpt-4.1-mini",
+        messages: [
+          ...recentMessages,
+          {
+            role: "system",
+            content: localRecommendation
+              ? `Yerel ürün öneri notu:\n${localRecommendation}\n\nBunu uygunsa doğal bir cevap olarak kullan.`
+              : "Yerel ürün öneri notu yok.",
+          },
+        ],
       });
 
-      reply =
-        completion.choices?.[0]?.message?.content?.trim() ||
-        "Size yardımcı olayım. Kullanım amacınızı ve nasıl bir makine aradığınızı biraz daha detaylandırır mısınız?";
+      const reply =
+        response.choices?.[0]?.message?.content ||
+        localRecommendation ||
+        "Şu anda yanıt üretemedim.";
 
-      productLinks = recommended
-        .slice(0, 3)
-        .map((p) => ({ title: p.title, url: p.url, price: p.priceText }));
-
-      const leads = getLeads();
-      leads.push({
-        id: crypto.randomUUID(),
-        sessionId: id,
-        customerName: session.state?.customerName || "Bilinmiyor",
-        customerPhone: session.state?.customerPhone || "",
-        reason: "urun",
-        reasonLabel: reasonLabel("urun"),
-        detail: message,
-        status: "yeni",
-        createdAt: nowIso(),
-      });
-      saveLeads(leads);
-
-      try {
-        await dbMusteriTalebiKaydet({
-          oturumKodu: id,
-          musteriAdi: session.state?.customerName || "Bilinmiyor",
-          musteriTelefonu: session.state?.customerPhone || "",
-          talepTuru: "urun",
-          talepEtiketi: reasonLabel("urun"),
-          aciklama: message,
-          durum: "yeni",
-        });
-      } catch (dbError) {
-        console.error("SQLite ürün talebi kayıt hatası:", dbError.message);
-      }
-
-      for (const product of recommended) {
-        try {
-          await dbUrunTalebiKaydet({
-            oturumKodu: id,
-            urunAdi: product.title,
-            kategori: product.category,
-            makineTipi: product.machineType,
-          });
-        } catch (dbError) {
-          console.error("SQLite ürün öneri kayıt hatası:", dbError.message);
+      if (!state.handoffRequired && aiSuggestsHandoff(reply)) {
+        state.handoffRequired = true;
+        if (!state.handoffReason) {
+          state.handoffReason = detectHandoffReason(message) || "ai_yetersiz";
         }
+
+        state.awaitingReason = true;
+
+        const forcedReply =
+          "Bu konuda sizi yetkilimize iletmem daha doğru olur. Hangi özellikte ürün istediğinizi ve ne için alım yapacağınızı kısaca paylaşır mısınız?";
+
+        session.messages.push({
+          role: "assistant",
+          content: forcedReply,
+        });
+
+        saveSessions();
+
+        return res.json({
+          reply: forcedReply,
+          sessionId: currentSessionId,
+          handoffRequired: true,
+          needContactInfo: true,
+          showWhatsappButton: false,
+          whatsappLink: null,
+        });
       }
+
+      session.messages.push({
+        role: "assistant",
+        content: reply,
+      });
+
+      saveSessions();
+
+      return res.json({
+        reply,
+        sessionId: currentSessionId,
+        handoffRequired: false,
+        needContactInfo: false,
+        showWhatsappButton: false,
+        whatsappLink: null,
+      });
     }
 
-    session.messages.push({ role: "assistant", content: reply, createdAt: nowIso() });
-    session.updatedAt = nowIso();
-    saveSessions(sessions);
-
-    await dbMesajKaydet(id, "asistan", reply);
-
-    supabase.from("conversations").insert({
-      session_id: id,
-      user_msg: message,
-      bot_reply: reply,
-      page_url: req.body.pageUrl || null,
-      ip_address: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
-      user_agent: req.headers["user-agent"],
-    }).then(({ error }) => { if (error) console.error("Supabase hata:", error.message); });
-    return res.json({ reply, sessionId: id, showWhatsappButton, whatsappLink, productLinks });
-
-  } catch (error) {
-    console.error("CHAT ERROR:", error);
-    return res.status(500).json({
-      error: "Sohbet sırasında hata oluştu.",
-      detail: process.env.NODE_ENV === "development" ? error.message : undefined,
+    session.messages.push({
+      role: "assistant",
+      content: result.reply,
     });
-  }
-});
 
-/* ADMIN AUTH */
+    saveSessions();
 
-function checkAdmin(req, res, next) {
-  const key = req.headers["x-admin-key"];
-  if (!key || key !== ADMIN_KEY) return res.status(403).json({ error: "Yetkisiz erişim" });
-  next();
-}
-
-/* ADMIN ENDPOINTS */
-
-app.get("/admin/sqlite-dashboard", checkAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const oturumSayisi = await db.get(`SELECT COUNT(*) AS adet FROM sohbet_oturumlari`);
-    const talepSayisi = await db.get(`SELECT COUNT(*) AS adet FROM musteri_talepleri`);
-    const yonlendirmeSayisi = await db.get(`SELECT COUNT(*) AS adet FROM yetkili_yonlendirmeleri`);
-    const satisSayisi = await db.get(`SELECT COUNT(*) AS adet FROM satislar`);
-    const bugun = new Date().toISOString().slice(0, 10);
-    const bugunTalep = await db.get(`SELECT COUNT(*) AS adet FROM musteri_talepleri WHERE olusturulma_tarihi LIKE ?`, [`${bugun}%`]);
-    const bugunYonlendirme = await db.get(`SELECT COUNT(*) AS adet FROM yetkili_yonlendirmeleri WHERE olusturulma_tarihi LIKE ?`, [`${bugun}%`]);
-    const sonYonlendirmeler = await db.all(`SELECT id, musteri_adi AS customerName, musteri_telefonu AS customerPhone, yonlendirme_etiketi AS handoffReasonLabel, ozet AS summary, olusturulma_tarihi AS createdAt FROM yetkili_yonlendirmeleri ORDER BY id DESC LIMIT 5`);
-    res.json({
-      totalHandoffs: yonlendirmeSayisi?.adet || 0,
-      totalSessions: oturumSayisi?.adet || 0,
-      totalLeads: talepSayisi?.adet || 0,
-      totalSales: satisSayisi?.adet || 0,
-      todayLeads: bugunTalep?.adet || 0,
-      todayHandoffs: bugunYonlendirme?.adet || 0,
-      recentHandoffs: sonYonlendirmeler || [],
+    return res.json({
+      reply: result.reply,
+      sessionId: currentSessionId,
+      handoffRequired: result.handoffRequired || false,
+      needContactInfo: result.needContactInfo || false,
+      showWhatsappButton: result.showWhatsappButton || false,
+      whatsappLink: result.whatsappLink || null,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("CHAT HATASI:", error);
+    res.status(500).json({ error: "Sunucuda hata oluştu" });
   }
 });
 
-app.get("/admin/sqlite-talepler", checkAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all(`SELECT id, musteri_adi AS customerName, musteri_telefonu AS customerPhone, talep_etiketi AS reasonLabel, aciklama AS detail, durum AS status, olusturulma_tarihi AS createdAt FROM musteri_talepleri ORDER BY id DESC LIMIT 200`);
-    res.json(rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+app.listen(PORT, () => {
+  console.log(`Server çalışıyor: http://localhost:${PORT}`);
 });
-
-app.get("/admin/sqlite-yonlendirmeler", checkAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all(`SELECT id, musteri_adi AS customerName, musteri_telefonu AS customerPhone, yonlendirme_etiketi AS handoffReasonLabel, ozet AS summary, olusturulma_tarihi AS createdAt FROM yetkili_yonlendirmeleri ORDER BY id DESC LIMIT 200`);
-    res.json(rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get("/admin/sqlite-oturumlar", checkAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const oturumlar = await db.all(`SELECT id, oturum_kodu, olusturulma_tarihi, guncellenme_tarihi, durum FROM sohbet_oturumlari ORDER BY id DESC LIMIT 200`);
-    const result = {};
-    for (const item of oturumlar) {
-      const sonMesaj = await db.get(`SELECT mesaj FROM sohbet_mesajlari WHERE oturum_id = ? ORDER BY id DESC LIMIT 1`, [item.id]);
-      result[item.oturum_kodu] = {
-        createdAt: item.olusturulma_tarihi,
-        updatedAt: item.guncellenme_tarihi,
-        messages: sonMesaj ? [{ role: "assistant", content: sonMesaj.mesaj }] : [],
-        durum: item.durum,
-      };
-    }
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post("/admin/sqlite-talep-durum-guncelle", checkAdmin, async (req, res) => {
-  try {
-    const { id, status } = req.body;
-    const db = await getDb();
-    await db.run(`UPDATE musteri_talepleri SET durum = ? WHERE id = ?`, [status, id]);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post("/admin/satis-ekle", checkAdmin, async (req, res) => {
-  try {
-    const { musteriAdi, musteriTelefonu, urunAdi, aciklama, tutar, odemeTipi } = req.body;
-    const db = await getDb();
-    const result = await db.run(
-      `INSERT INTO satislar (musteri_adi, musteri_telefonu, urun_adi, aciklama, tutar, odeme_tipi, olusturulma_tarihi) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [musteriAdi || null, musteriTelefonu || null, urunAdi || null, aciklama || null, Number(tutar || 0), odemeTipi || null, nowIso()]
-    );
-    const satisId = result.lastID;
-    const makbuzNo = `IRF-${Date.now()}`;
-    await db.run(
-      `INSERT INTO makbuzlar (satis_id, makbuz_no, makbuz_tarihi, toplam_tutar, notlar) VALUES (?, ?, ?, ?, ?)`,
-      [satisId, makbuzNo, nowIso(), Number(tutar || 0), "Panel üzerinden oluşturuldu"]
-    );
-    res.json({ success: true, satisId, makbuzNo });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get("/admin/satislar", checkAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const rows = await db.all(`SELECT s.id, s.musteri_adi, s.musteri_telefonu, s.urun_adi, s.aciklama, s.tutar, s.para_birimi, s.odeme_tipi, s.durum, s.olusturulma_tarihi, m.makbuz_no, m.makbuz_tarihi FROM satislar s LEFT JOIN makbuzlar m ON m.satis_id = s.id ORDER BY s.id DESC LIMIT 200`);
-    res.json(rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get("/admin/sqlite-debug", checkAdmin, async (req, res) => {
-  try {
-    const db = await getDb();
-    const tablolar = await db.all(`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`);
-    res.json({ tamam: true, tablolar });
-  } catch (error) {
-    res.status(500).json({ tamam: false, error: error.message });
-  }
-});
-
-/* SAYFALAR */
-
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
-app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
-app.get("/widget-page", (req, res) => res.sendFile(path.join(__dirname, "public", "widget-page.html")));
-app.get("/health", (req, res) => res.json({ ok: true, port: PORT, time: nowIso() }));
-
-(async () => {
-  try {
-    await initDb();
-    app.listen(PORT, () => {
-      console.log(`🚀 IRFMAK AI çalışıyor: http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Veritabanı başlatılamadı:", error);
-    process.exit(1);
-  }
-})();
