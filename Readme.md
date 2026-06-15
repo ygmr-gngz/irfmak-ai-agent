@@ -1,27 +1,39 @@
 # IRF Mak — AI İçerik ve Satış Asistanı
 
-IRF Mak web sitesi için AI destekli satış asistanı ve sosyal medya içerik üreticisi.
+IRF Mak web sitesi için geliştirilmiş, yapay zeka destekli satış asistanı ve sosyal medya içerik üretim platformu.
 
----
+## İçindekiler
+
+- [Özellikler](#özellikler)
+- [Kurulum](#kurulum)
+- [Satış Asistanı](#satış-asistanı)
+- [YouTube İçerik Modülü](#youtube-içerik-modülü)
+- [Instagram İçerik Modülü](#instagram-içerik-modülü)
+- [Instagram Otomasyonu (Meta Graph API)](#instagram-otomasyonu-meta-graph-api)
+- [İçerik Stüdyosu (Admin UI)](#içerik-stüdyosu-admin-ui)
+- [Proje Yapısı](#proje-yapısı)
+- [Kullanılan Teknolojiler](#kullanılan-teknolojiler)
 
 ## Özellikler
 
-| Modül | Açıklama | Endpoint |
-|---|---|---|
-| **Satış Asistanı** | Web sitesi chat widget'ı — ürün önerisi, handoff akışı | `POST /chat` |
-| **YouTube İçerik** | 5 türde video içeriği üretimi | `POST /content/youtube/generate` |
-| **Instagram İçerik** | 5 formatta gönderi üretimi | `POST /content/instagram/generate` |
-| **İçerik Stüdyosu** | Admin UI | `GET /content-studio.html` |
-
----
+| Modül | Açıklama | Uç Nokta |
+|-------|----------|----------|
+| Satış Asistanı | Web sitesi sohbet widget'ı — ürün önerisi ve WhatsApp yönlendirme akışı | `POST /chat` |
+| YouTube İçerik | 5 farklı türde video içeriği üretimi | `POST /content/youtube/generate` |
+| Instagram İçerik | 5 farklı formatta gönderi içeriği üretimi | `POST /content/instagram/generate` |
+| İçerik Stüdyosu | Yönetici (admin) arayüzü | `GET /content-studio.html` |
 
 ## Kurulum
+
+### 1. Bağımlılıkları yükleyin
 
 ```bash
 npm install
 ```
 
-`.env` dosyası oluştur:
+### 2. Ortam değişkenlerini tanımlayın
+
+Proje kök dizininde bir `.env` dosyası oluşturun:
 
 ```env
 OPENAI_API_KEY=sk-...
@@ -31,45 +43,45 @@ INSTAGRAM_ACCESS_TOKEN=...
 INSTAGRAM_USER_ID=...
 ```
 
+### 3. Sunucuyu başlatın
+
 ```bash
 node index.js
 ```
 
-Sunucu `http://localhost:3000` adresinde başlar.
-
----
+Sunucu varsayılan olarak şu adreste çalışır: **http://localhost:3000**
 
 ## Satış Asistanı
 
-Web sitesine embed edilebilir chat widget'ı.
+Web sitesine kolayca entegre edilebilen sohbet widget'ı.
 
-**Özellikler:**
-- Bütçe, makine tipi, kumaş türü ve kullanım saatine göre ürün önerisi
-- Toplu satış, servis, arıza gibi durumlarda WhatsApp handoff akışı
-- Ad, soyad ve telefon toplama
-- Session ve handoff kayıtları (`data/` klasöründe JSON)
+### Özellikler
 
-**Admin endpoint'leri:**
-```
-GET /admin/handoffs   → Tüm handoff kayıtları
-GET /admin/sessions   → Tüm oturumlar
-```
+- Bütçe, makine tipi, kumaş türü ve kullanım süresine göre kişiselleştirilmiş ürün önerileri
+- Toplu satış, servis talebi veya arıza durumlarında WhatsApp üzerinden insan desteğine yönlendirme akışı
+- Yönlendirme sürecinde ad, soyad ve telefon bilgisi toplama
+- Oturum ve yönlendirme kayıtlarının `data/` klasöründe JSON formatında saklanması
 
----
+### Yönetici Uç Noktaları
+
+| Uç Nokta | Açıklama |
+|----------|----------|
+| `GET /admin/handoffs` | Tüm yönlendirme (handoff) kayıtlarını döndürür |
+| `GET /admin/sessions` | Tüm sohbet oturumlarını döndürür |
 
 ## YouTube İçerik Modülü
 
 ### İçerik Türleri
 
-| Tür | Anahtar |
-|---|---|
+| İçerik Türü | Anahtar |
+|-------------|---------|
 | Kullanım ve Püf Noktaları | `kullanim_puflari` |
 | Arıza Çözümleri ve Bakım | `ariza_cozum` |
 | Yeni Başlayanlar Rehberi | `baslangic_rehberi` |
 | Ürün İnceleme ve Karşılaştırma | `urun_inceleme` |
 | Profesyonel İpuçları | `profesyonel_ipucu` |
 
-### Endpoint'ler
+### Uç Noktalar
 
 ```
 GET  /content/youtube/types
@@ -79,7 +91,7 @@ POST /content/youtube/generate
 
 ### Örnek İstek
 
-```json
+```http
 POST /content/youtube/generate
 {
   "type": "ariza_cozum",
@@ -94,7 +106,9 @@ POST /content/youtube/generate
 {
   "title": "Video başlığı",
   "description": "YouTube açıklaması",
-  "scriptOutline": [{ "timestamp": "0:00", "section": "Giriş", "content": "..." }],
+  "scriptOutline": [
+    { "timestamp": "0:00", "section": "Giriş", "content": "..." }
+  ],
   "keywords": ["..."],
   "hashtags": ["#..."],
   "thumbnailConcept": "Thumbnail fikri",
@@ -103,21 +117,19 @@ POST /content/youtube/generate
 }
 ```
 
----
-
 ## Instagram İçerik Modülü
 
 ### Format Türleri
 
-| Format | Anahtar |
-|---|---|
-| Reels | `reels` |
+| Format Türü | Anahtar |
+|-------------|---------|
+| Makaralar (Reels) | `reels` |
 | Karusel Gönderisi | `karusel` |
 | Teknik İpucu | `teknik_ipucu` |
 | Ürün Tanıtımı | `urun_tanitim` |
 | İlham ve Topluluk | `ilham_topluluk` |
 
-### Endpoint'ler
+### Uç Noktalar
 
 ```
 GET  /content/instagram/types
@@ -127,7 +139,7 @@ POST /content/instagram/generate
 
 ### Örnek İstek
 
-```json
+```http
 POST /content/instagram/generate
 {
   "type": "reels",
@@ -136,14 +148,16 @@ POST /content/instagram/generate
 }
 ```
 
-### Dönen Alanlar (Reels örneği)
+### Dönen Alanlar (Reels Örneği)
 
 ```json
 {
   "caption": "Kısa açıklama",
   "fullCaption": "Tam açıklama metni",
   "hashtags": ["#..."],
-  "reelsScript": [{ "second": "0-3", "visual": "...", "text": "...", "voiceover": "..." }],
+  "reelsScript": [
+    { "second": "0-3", "visual": "...", "text": "...", "voiceover": "..." }
+  ],
   "hookLine": "Kanca cümlesi",
   "audioSuggestion": "Müzik önerisi",
   "textOverlays": ["Ekran yazısı 1"],
@@ -154,82 +168,77 @@ POST /content/instagram/generate
 
 ### Hashtag Stratejisi
 
-Her üretimde 30 hashtag gelir:
-- 5 niş hashtag (`#irfmak`, `#dikişmakinesiservisi` ...)
-- 10 orta ölçekli hashtag
-- 10 geniş hashtag
-- 5 trend / hedef kitle etiketi
+Her üretimde toplam **30 hashtag** oluşturulur:
 
----
+1. 5 niş hashtag (örn. `#irfmak`, `#dikişmakinesiservisi`)
+2. 10 orta ölçekli hashtag
+3. 10 geniş kapsamlı hashtag
+4. 5 trend / hedef kitle odaklı etiket
 
 ## Instagram Otomasyonu (Meta Graph API)
 
-Üretilen içerikleri Instagram'a otomatik göndermek için **Meta Graph API** kullanılır.
+Üretilen içeriklerin Instagram'a otomatik gönderilmesi için Meta Graph API kullanılır.
 
 ### Kurulum Adımları
 
-**1. Facebook Developer hesabı aç**
-- [developers.facebook.com](https://developers.facebook.com) → Uygulama oluştur → "Business" türü seç
+1. **Facebook Developer hesabı açın**
+   `developers.facebook.com` → Uygulama oluştur → **"Business"** türünü seçin
 
-**2. Instagram hesabını hazırla**
-- Instagram hesabı **Business veya Creator** olmalı (kişisel hesap çalışmaz)
-- Hesabı bir **Facebook Sayfası**'na bağla
+2. **Instagram hesabınızı hazırlayın**
+   Hesap, Business veya Creator türünde olmalı (kişisel hesaplar çalışmaz) ve bir Facebook Sayfası'na bağlanmalıdır
 
-**3. App'e izinler ekle**
-App Ayarları → Permissions bölümünden şu izinleri iste:
-```
-instagram_basic
-instagram_content_publish
-pages_read_engagement
-pages_show_list
-```
+3. **Uygulamaya izinleri ekleyin**
+   App Ayarları → Permissions bölümünden şu izinleri isteyin:
+   - `instagram_basic`
+   - `instagram_content_publish`
+   - `pages_read_engagement`
+   - `pages_show_list`
 
-**4. Access Token al**
-- Graph API Explorer → Token Oluştur → Long-lived token'a çevir (60 gün geçerli)
-- Instagram Business hesabının `user_id`'sini al:
-```
-GET https://graph.facebook.com/v19.0/me/accounts?access_token=TOKEN
-```
+4. **Erişim token'ı alın**
+   Graph API Explorer → Token Oluştur → Long-lived token'a çevirin (60 gün geçerli)
+   Instagram Business hesabının `user_id`'sini almak için:
+   ```
+   GET https://graph.facebook.com/v19.0/me/accounts?access_token=TOKEN
+   ```
 
-**5. `.env` dosyasına ekle**
-```env
-INSTAGRAM_ACCESS_TOKEN=your_long_lived_token
-INSTAGRAM_USER_ID=your_ig_business_user_id
-```
+5. **`.env` dosyasına ekleyin**
+   ```env
+   INSTAGRAM_ACCESS_TOKEN=your_long_lived_token
+   INSTAGRAM_USER_ID=your_ig_business_user_id
+   ```
 
 ### Gönderi Yayınlama Akışı
 
+**1. Medya Konteyneri Oluştur**
 ```
-1. Medya Container Oluştur
-   POST /{ig-user-id}/media
-   → { image_url, caption } veya { video_url, media_type: "REELS" }
-   ← creation_id döner
+POST /{ig-user-id}/media
+→ { image_url, caption } veya { video_url, media_type: "REELS" }
+← creation_id döner
+```
 
-2. Container'ı Yayınla
-   POST /{ig-user-id}/media_publish
-   → { creation_id }
-   ← post_id döner
+**2. Konteyneri Yayınla**
+```
+POST /{ig-user-id}/media_publish
+→ { creation_id }
+← post_id döner
 ```
 
 ### Medya Barındırma
 
-Görsel ve video dosyaları **herkese açık bir URL'den** çekilmesi gerekir:
-- **Cloudinary** (önerilen — ücretsiz plan yeterli)
-- AWS S3 (public bucket)
-- Herhangi bir CDN
+Görsel ve video dosyaları herkese açık bir URL'den erişilebilir olmalıdır:
 
----
+- **Cloudinary** (önerilen — ücretsiz plan yeterli)
+- **AWS S3** (genel/public kova)
+- Herhangi bir CDN
 
 ## İçerik Stüdyosu (Admin UI)
 
-`http://localhost:3000/content-studio.html` adresinde açılır.
+`http://localhost:3000/content-studio.html` adresinden erişilir.
 
 - YouTube / Instagram sekme geçişi
 - İçerik türü + konu + opsiyonel ürün girişi
 - "Haftalık İçerik Fikirleri" ile otomatik konu önerileri
 - Her alanda tek tık kopyalama
-
----
 
 ## Proje Yapısı
 
@@ -241,20 +250,18 @@ irfmak-ai-agent/
 ├── productCatalog.js     # Ürün kataloğu
 ├── public/
 │   ├── index.html        # Chat widget sayfası
-│   ├── widget.js         # Embed widget
-│   ├── app.js            # Chat frontend
-│   ├── style.css         # Stiller
+│   ├── widget.js          # Embed widget
+│   ├── app.js             # Chat frontend
+│   ├── style.css          # Stiller
 │   └── content-studio.html  # Admin içerik paneli
 ├── data/
 │   ├── sessions.json     # Oturum kayıtları
 │   └── handoffs.json     # Handoff kayıtları
-├── .env                  # API anahtarları (git'e ekleme)
+├── .env                  # API anahtarları (git'e eklenmemeli)
 └── widget-test.html      # Widget test sayfası
 ```
 
----
-
-## Teknolojiler
+## Kullanılan Teknolojiler
 
 - **Node.js + Express** — sunucu
 - **OpenAI GPT-4.1-mini** — AI motor
