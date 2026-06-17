@@ -1,141 +1,184 @@
-IRFMAK AI Agent
-İrfmak için geliştirilen yapay zeka destekli müşteri danışmanı, sohbet widget'ı, ürün öneri sistemi, yetkili yönlendirme akışı ve içerik otomasyonu altyapısıdır.
-Bu proje; İrfmak web sitesine gömülebilen bir sohbet widget'ı, müşteri taleplerini takip edebilen bir yönetim paneli ve ürün kataloğuna göre çalışan satış odaklı bir AI asistanı içerir.
-İçindekiler
+<div align="center">
 
-Özellikler
-Kullanım Senaryosu
-Teknolojiler
-Proje Yapısı
-Kurulum
-Ortam Değişkenleri
-Komutlar
-API Referansı
-AI Asistan Mantığı
-Ürün Kataloğu
-Widget Kullanımı
-İçerik Otomasyonu
-YouTube Entegrasyonu
-Bilinen Sorunlar ve Dikkat Edilmesi Gerekenler
-Geliştirme Notları
-Lisans
+# IRFMAK AI Agent
 
-Özellikler
+**İrfmak için yapay zeka destekli satış danışmanı**
 
-Yapay zeka destekli müşteri sohbeti
-Ürün ihtiyacına göre öneri sistemi
-Ev tipi ve sanayi tipi dikiş makineleri için yönlendirme
-Yedek parça, iğne, ayak ve tekstil ekipmanı danışmanlığı
-Yetkiliye aktarım akışı
-Ad soyad ve telefon bilgisi toplama
-WhatsApp Business yönlendirmesi
-Admin panelinden müşteri taleplerini görüntüleme
-Sohbet oturumu takibi
-Ürün kataloğu bazlı öneri mantığı
-Instagram içerik metni üretimi
-YouTube video yükleme altyapısı
-Telegram üzerinden içerik onay akışı
-iframe / widget mantığıyla dış siteye gömülebilir yapı
+Dikiş makineleri ve tekstil ekipmanı sektörüne özel; ürün öneri motoru, yetkili aktarım akışı ve içerik otomasyonunu tek bir altyapıda birleştiren AI ajanı.
 
-Kullanım Senaryosu
-Müşteri web sitesine girer ve sohbet widget'ı üzerinden ihtiyacını yazar.
-Örnek:
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4.1--mini-412991?style=flat-square&logo=openai&logoColor=white)](https://openai.com)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![Deploy](https://img.shields.io/badge/Railway-deployed-0B0D0E?style=flat-square&logo=railway&logoColor=white)](https://irfmak-ai-agent-production.up.railway.app)
 
-"Ev tipi dikiş makinesi önerir misiniz?"
+</div>
 
-AI asistan müşterinin ihtiyacını analiz eder, ürün kataloğundan uygun ürünleri önerir ve gerekirse kullanıcıyı ürün sayfasına, ödeme adımına veya yetkili görüşmesine yönlendirir.
-Yetkili gerektiren durumlarda sistem müşteriden sırasıyla şu bilgileri toplar:
+---
 
-Talep detayı
-Ad soyad bilgisi
-Telefon numarası
+## Ne Yapar?
 
-Bu bilgiler alındıktan sonra WhatsApp üzerinden devam edilebilecek bir bağlantı oluşturulur.
-Teknolojiler
-KategoriTeknolojiÇalışma zamanıNode.jsWeb çatısıExpress.jsYapay zekaOpenAI APIVeri saklamaSQLite / JSON tabanlı dosya depolamaVeritabanı istemcisiSupabaseEntegrasyonlarGoogle API'leri, YouTube API'leri, Telegram Bot API'siYardımcıdotenv, CORSÖn uçHTML, CSS, JavaScript
-Proje Yapısı
+Müşteri web sitesine girer ve sohbet widget'ı üzerinden ihtiyacını yazar:
+
+> _"Ev tipi dikiş makinesi önerir misiniz?"_
+
+Sistem üç aşamada çalışır:
+
+```
+Mesaj alınır → Katalogdan eşleşme yapılır → Yanıt verilir veya yetkili devreye girer
+```
+
+Yetkili aktarımı gerektiğinde (toplu satış, servis, arıza vb.) müşteriden sırasıyla talep detayı, ad soyad ve telefon alınır; ardından WhatsApp Business üzerinden devam bağlantısı oluşturulur.
+
+---
+
+## Özellikler
+
+```
+Müşteri Deneyimi          Admin & Otomasyon           Entegrasyonlar
+─────────────────         ──────────────────          ──────────────
+✓ AI sohbet danışmanı     ✓ Oturum takibi             ✓ WhatsApp Business
+✓ Ürün öneri motoru       ✓ Yetkili talep listesi     ✓ YouTube Data API
+✓ Hızlı cevap butonları   ✓ Instagram içerik üretimi  ✓ Telegram Bot
+✓ WhatsApp yönlendirme    ✓ Telegram onay akışı       ✓ Google APIs
+✓ iframe / script embed   ✓ Video yükleme altyapısı   ✓ Supabase
+```
+
+---
+
+## Teknoloji Yığını
+
+| Katman | Teknoloji | Notlar |
+|---|---|---|
+| Çalışma ortamı | Node.js 18+ | |
+| Web çatısı | Express.js | REST API |
+| Yapay zeka | OpenAI API | GPT-4.1-mini |
+| Veri saklama | SQLite · JSON · Supabase | Oturum ve aktarım kayıtları |
+| Entegrasyonlar | Google APIs · YouTube · Telegram Bot | |
+| Ön uç | HTML · CSS · Vanilla JS | Bağımlılık yok |
+
+---
+
+## Proje Yapısı
+
+```
 irfmak-ai-agent/
-├── .github/
-│   └── workflows/
-├── data/
-│   ├── sessions.json
-│   └── handoffs.json
-├── public/
-│   ├── index.html
-│   ├── app.js
+│
+├── public/                     # Ön uç
+│   ├── index.html              # Ana sohbet arayüzü
+│   ├── app.js                  # İstemci mantığı
 │   ├── style.css
-│   ├── admin.html
-│   ├── admin.css
+│   ├── admin.html              # Yönetim paneli
 │   ├── admin.js
-│   ├── widget-page.html
-│   └── widget.js
-├── tmp/
+│   ├── admin.css
+│   ├── widget-page.html        # Widget önizleme
+│   └── widget.js               # Gömülebilir widget
+│
+├── data/
+│   ├── sessions.json           # Aktif sohbet oturumları
+│   └── handoffs.json           # Yetkili aktarım kayıtları
+│
+├── index.js                    # Uygulama giriş noktası
+├── productCatalog.js           # Ürün kataloğu
+├── db.js                       # Veri erişim katmanı
+├── supabase.js                 # Supabase istemcisi
+│
+├── generate-content.js         # Instagram içerik üretici
+├── generate-video.js           # Video üretim altyapısı
+├── upload-youtube.js           # YouTube yükleme modülü
+├── get-youtube-token.js        # OAuth token yönetimi
+│
+├── reset-data.js               # Veri sıfırlama aracı
+├── widget-test.html            # Widget test sayfası
 ├── .env.example
-├── db.js
-├── generate-content.js
-├── generate-video.js
-├── get-youtube-token.js
-├── index.js
-├── package.json
-├── productCatalog.js
-├── reset-data.js
-├── supabase.js
-├── upload-youtube.js
-├── widget-test.html
-└── Readme.md
-Kurulum
+└── package.json
+```
 
-Projeyi klonlayın:
+---
 
-Bashgit clone https://github.com/ygmr-gngz/irfmak-ai-agent.git
+## Kurulum
+
+### Gereksinimler
+
+- Node.js 18+
+- npm 9+
+- OpenAI API anahtarı
+
+### Adımlar
+
+```bash
+# 1. Repoyu klonlayın
+git clone https://github.com/ygmr-gngz/irfmak-ai-agent.git
 cd irfmak-ai-agent
 
-Bağımlılıkları yükleyin:
+# 2. Bağımlılıkları yükleyin
+npm install
 
-Bashnpm install
+# 3. Ortam değişkenlerini yapılandırın
+cp .env.example .env
+# .env dosyasını düzenleyin (aşağıya bakın)
 
-.env.example dosyasını olarak kopyalayın:.env
+# 4. Çalıştırın
+npm start
+```
 
-Bashcp .env.example .env
+`http://localhost:3000` adresini açın.
 
-.env dosyasını kendi bilgilerinizle doldurun (BKZ. Ortam Değişkenleri).
-Projeyi çalıştırın:
+---
 
-Bashnpm start
+## Ortam Değişkenleri
 
-Tarayıcıdan açın:
+### Zorunlu
 
-http://localhost:3000
-Ortam Değişkenleri
-Temel yapılandırma:
-çevreOPENAI_API_KEY=your_openai_api_key_here
+```env
+OPENAI_API_KEY=           # OpenAI API anahtarı
 OPENAI_MODEL=gpt-4.1-mini
 PORT=3000
 WHATSAPP_NUMBER=905336370137
 ALLOWED_ORIGINS=http://localhost:3000
-ADMIN_KEY=change_this_admin_key
+ADMIN_KEY=                # Production'da güçlü bir değer seçin
 NODE_ENV=development
-YouTube entegrasyonu için ek değişkenler:
-çevreYOUTUBE_CLIENT_ID=
+```
+
+### YouTube Entegrasyonu (opsiyonel)
+
+```env
+YOUTUBE_CLIENT_ID=
 YOUTUBE_CLIENT_SECRET=
 YOUTUBE_REDIRECT_URI=
 YOUTUBE_REFRESH_TOKEN=
+```
 
-ADMIN_KEY değerini production ortamında varsayılan değerden değiştirmeniz önerilir.
+> [!WARNING]
+> `ADMIN_KEY` değerini production ortamında varsayılandan mutlaka değiştirin.
 
-Komutlar
-KomutAçıklamanpm startSunucuyu başlatırnpm run resetVeri dosyalarını (, ) sıfırlarsessions.jsonhandoffs.json
-API Referansı
-Sohbet Uç Noktası
-POST /chat
-Müşteri mesajını AI asistana gönderir.
-İstek gövdesi:
-JSON{
+---
+
+## Komutlar
+
+```bash
+npm start        # Sunucuyu başlatır
+npm run reset    # sessions.json ve handoffs.json dosyalarını sıfırlar
+```
+
+---
+
+## API
+
+### `POST /chat`
+
+Müşteri mesajını AI asistana iletir.
+
+**İstek**
+```json
+{
   "message": "Ev tipi dikiş makinesi önerir misiniz?",
   "sessionId": "optional-session-id"
 }
-Yanıt:
-JSON{
+```
+
+**Yanıt**
+```json
+{
   "reply": "İhtiyacınıza göre öne çıkabilecek seçenekler...",
   "sessionId": "generated-session-id",
   "handoffRequired": false,
@@ -143,36 +186,59 @@ JSON{
   "showWhatsappButton": false,
   "whatsappLink": null
 }
-Admin Handoff Listesi
-GET /admin/handoffs
-Yetkiliye aktarılması gereken müşteri taleplerini listeler.
-Admin Session Listesi
-GET /admin/sessions
-Sohbet oturumlarını listeler.
-AI Asistan Mantığı
-Sistem asistanı şu prensiplerle çalışır:
+```
 
-Kullanıcının ihtiyacını kısa ve net şekilde anlamaya çalışır.
-Önce sohbet içinde yardımcı olmaya çalışır.
-Ürün önerisi yaparken ürün kataloğunu referans alır.
-Bilmediği fiyat, stok veya teknik özellikleri uydurmaz.
-Gerekirse kullanıcıdan bütçe, kumaş tipi, kullanım amacı ve kullanım yoğunluğu bilgisi ister.
-Yalnızca gerekli durumlarda yetkiliye yönlendirir.
+---
 
-Yetkiliye yönlendirme gerektiren durumlar:
+### `GET /admin/handoffs`
 
-Toplu satış
-Bayilik / toptan alım
-Özel fiyat talebi
-Servis talebi
-Arıza
-Teknik uyumluluk
-Kullanıcının açıkça yetkili istemesi
+Yetkili aktarımı bekleyen müşteri taleplerini döndürür.
 
-Ürün Kataloğu
-Ürünler dosyasında tutulur.productCatalog.js
-Örnek ürün yapısı:
-javascript{
+```
+Authorization: x-admin-key: <ADMIN_KEY>
+```
+
+---
+
+### `GET /admin/sessions`
+
+Aktif ve geçmiş sohbet oturumlarını listeler.
+
+```
+Authorization: x-admin-key: <ADMIN_KEY>
+```
+
+---
+
+## AI Asistan Davranışı
+
+### Temel Kurallar
+
+- Kullanıcının ihtiyacını net anlamadan öneri yapmaz
+- Katalogda olmayan fiyat, stok veya teknik bilgi uydurmaz
+- Gerekirse bütçe, kumaş tipi, kullanım amacı, kullanım yoğunluğu sorar
+- Yalnızca gerekli durumlarda yetkili aktarımı başlatır
+
+### Yetkili Aktarımı Tetikleyen Durumlar
+
+| Durum | Örnek |
+|---|---|
+| Toplu / toptan alım | "50 adet sipariş vereceğiz" |
+| Bayilik talebi | "Distribütörlük yapmak istiyorum" |
+| Özel fiyat görüşmesi | "Kurumsal fiyat alabilir miyim?" |
+| Servis / arıza | "Makinam çalışmıyor" |
+| Teknik uyumluluk | "Bu model şu kumaşı diker mi?" |
+| Açık talep | "Yetkiliyle görüşmek istiyorum" |
+
+---
+
+## Ürün Kataloğu
+
+Tüm ürünler `productCatalog.js` dosyasında tanımlanır. AI öneri motoru bu katalog üzerinden çalışır; harici kaynak kullanmaz.
+
+```js
+// Örnek ürün yapısı
+{
   id: "pfaff-passport-3",
   title: "Pfaff Passport 3.0 Elektronik Dikiş Makinesi",
   price: 30500,
@@ -182,45 +248,102 @@ javascript{
   url: "https://www.irfmak.com/urun/pfaff-passport-3-0-elektronik-dikis-makinesi",
   inStock: true
 }
-AI öneri sistemi bu katalog üzerinden çalışır.
-Widget Kullanımı
-Sohbet widget'ı, web sitesine veya script aracılığıyla gömülebilecek şekilde tasarlanmıştır.iframe
-Widget tarafında bulunan bileşenler:
+```
 
-Sohbet balonu
-Açılır chat paneli
-Hızlı cevap butonları
-Yeni sohbet başlatma
-WhatsApp yönlendirme butonu
+---
 
-İçerik Otomasyonu
-generate-content.js dosyası ürün kataloğundan rastgele bir ürün seçerek OpenAI ile Instagram caption, hashtag ve reklam metni üretir.
-Üretilen içerik, onay için Telegram üzerinden ilgili kişiye gönderilebilir.
-YouTube Entegrasyonu
-upload-youtube.js dosyası Google APIs üzerinden YouTube'a video yükleme altyapısı içerir.
-Gerekli ortam değişkenleri için bkz. Ortam Değişkenleri.
-Bilinen Sorunlar ve Dikkat Edilmesi Gerekenler
+## Widget Entegrasyonu
 
-Eksik modüller: içinde aşağıdaki dosyalar import edilmektedir:index.js
+Widget, herhangi bir web sayfasına `iframe` veya harici script aracılığıyla eklenir.
 
-javascript  const youtubeRouter = require("./youtubeContent");
-  const instagramRouter = require("./instagramContent");
-youtubeContent.js ve dosyaları repoda mevcut değilse, uygulama çalışma zamanında hata verir. Bu modüller kullanılacaksa ilgili route yapıları tamamlanmalı; kullanılmayacaksa ilgili ve satırları kaldırılmalıdır.instagramContent.jsrequireapp.use
+**Script ile ekleme**
+```html
+<script src="https://irfmak-ai-agent-production.up.railway.app/widget.js"></script>
+```
 
-Endpoint uyumsuzluğu: içinde sohbet isteği aşağıdaki production adresine gönderilmektedir:public/app.js
+Widget arayüzü şunları içerir:
+- Tetikleyici sohbet balonu
+- Açılır chat paneli
+- Hızlı cevap butonları
+- Yeni sohbet başlatma
+- WhatsApp yönlendirme butonu
 
-javascript  https://brave-compassion-production.up.railway.app/api/chat
-Backend ise endpointini sunmaktadır. Lokal geliştirme için frontend adresi olarak güncellenmeli; production'da ise ile arasında bir proxy/yönlendirme yapılandırılmalı veya endpoint isimleri eşitlenmelidir./chat/chat/api/chat/chat
-Geliştirme Notları
-Planlanan / önerilen geliştirmeler:
+---
 
-Admin panel için kimlik doğrulama (giriş) sistemi
-Supabase ile kalıcı müşteri kayıtları
-Ürün stok ve fiyat bilgisinin canlı API'den çekilmesi
-Sipariş / ödeme entegrasyonu
-WhatsApp Business API entegrasyonu
-Instagram otomatik paylaşım
-Dashboard grafik ve raporlama
-Müşteri segmentasyonu
-Çoklu dil desteği
-Demiryolu / Render dağıtımı dokümantasyonu
+## İçerik Otomasyonu
+
+`generate-content.js`, ürün kataloğundan rastgele bir ürün seçerek OpenAI aracılığıyla üretir:
+
+- Instagram caption
+- Hashtag seti
+- Reklam metni
+
+Üretilen içerik onay için Telegram Bot üzerinden ilgili kişiye iletilir; onay sonrasında yayına alınabilir.
+
+---
+
+## YouTube Entegrasyonu
+
+`upload-youtube.js`, Google APIs üzerinden YouTube'a programatik video yükleme sağlar. Gerekli OAuth yapılandırması için [Ortam Değişkenleri](#ortam-değişkenleri) bölümüne bakın.
+
+---
+
+## Bilinen Sorunlar
+
+### Eksik modüller
+
+`index.js` şu anda var olmayan iki modülü import etmektedir:
+
+```js
+const youtubeRouter = require("./youtubeContent");
+const instagramRouter = require("./instagramContent");
+```
+
+Bu dosyalar repoda bulunmadığından uygulama çalışma zamanında hata verir.
+
+**Çözüm:** Modüller kullanılacaksa route yapıları tamamlanmalı; kullanılmayacaksa ilgili `require` ve `app.use` satırları kaldırılmalıdır.
+
+---
+
+### Endpoint uyumsuzluğu
+
+`public/app.js` şu adrese istek gönderir:
+
+```
+POST https://brave-compassion-production.up.railway.app/api/chat
+```
+
+Backend ise `/chat` endpoint'ini sunar.
+
+**Çözüm:** Yerel geliştirmede frontend adresi `/chat` olarak güncellenmeli; production'da proxy yapılandırılmalı veya endpoint isimleri eşleştirilmelidir.
+
+---
+
+## Yol Haritası
+
+- [ ] Admin paneli kimlik doğrulama sistemi
+- [ ] Supabase ile kalıcı müşteri kayıtları  
+- [ ] Ürün stok ve fiyat bilgisinin canlı API'den çekilmesi
+- [ ] Sipariş / ödeme entegrasyonu
+- [ ] WhatsApp Business API entegrasyonu
+- [ ] Instagram otomatik paylaşım
+- [ ] Dashboard grafik ve raporlama
+- [ ] Müşteri segmentasyonu
+- [ ] Çoklu dil desteği
+- [ ] Railway / Render dağıtım dokümantasyonu
+
+---
+
+## Katkıda Bulunanlar
+
+<a href="https://github.com/ygmr-gngz">
+  <img src="https://github.com/ygmr-gngz.png" width="40" style="border-radius:50%">
+</a>
+
+**[@ygmr-gngz](https://github.com/ygmr-gngz)** — Yağmur Güngöz
+
+---
+
+<div align="center">
+  <sub>Production · <a href="https://irfmak-ai-agent-production.up.railway.app">irfmak-ai-agent-production.up.railway.app</a></sub>
+</div>
