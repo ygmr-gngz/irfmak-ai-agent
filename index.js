@@ -12,7 +12,7 @@ const instagramRouter = require("./instagramContent");
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const WHATSAPP_NUMBER = "905336370137";
 
 app.use(cors());
@@ -827,6 +827,6 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server çalışıyor: http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server çalışıyor: http://0.0.0.0:${PORT}`);
 });
