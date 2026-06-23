@@ -77,6 +77,9 @@ async function main() {
     console.log('\n📤 YouTube yükleme başlıyor...');
     await run('node upload-latest-youtube.js');
 
+    console.log('\n📲 Instagram/Facebook paylaşımı başlıyor...');
+    await run(`node publish-social.js "${item.topic}"`);
+
     console.log(`\n✅ Tamamlandı: ${item.type}`);
   }
 

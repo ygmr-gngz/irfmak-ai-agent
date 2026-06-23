@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İrfmak — Sosyal Medya Paneli</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1c1e21; }
+
+    .topbar {
+      background: #1877f2;
+      color: #fff;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .topbar h1 { font-size: 18px; font-weight: 700; }
+    .topbar a { color: #fff; opacity: 0.8; font-size: 13px; text-decoration: none; margin-left: auto; }
+    .topbar a:hover { opacity: 1; }
+
+    .tabs {
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      padding: 0 24px;
+    }
+    .tab-btn {
+      padding: 14px 20px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: #65676b;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { color: #1877f2; border-bottom-color: #1877f2; }
+    .tab-btn:hover { color: #1877f2; }
+
+    .content { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+
+    .status-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .status-card h2 { font-size: 16px; margin-bottom: 16px; color: #1c1e21; }
+
+    .connection-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .badge.green { background: #e6f4ea; color: #1e7e34; }
+    .badge.red { background: #fce8e6; color: #c62828; }
+    .badge.gray { background: #f0f2f5; color: #65676b; }
+
+    .detail-text { font-size: 13px; color: #65676b; }
+
+    .btn {
+      padding: 9px 18px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: #1877f2; color: #fff; }
+    .btn-primary:hover { background: #166fe5; }
+    .btn-danger { background: #fa3e3e; color: #fff; }
+    .btn-danger:hover { background: #e03333; }
+    .btn-secondary { background: #e4e6eb; color: #1c1e21; }
+    .btn-secondary:hover { background: #d8dadf; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      text-align: center;
+    }
+    .stat-box .val { font-size: 32px; font-weight: 700; color: #1877f2; }
+    .stat-box .lbl { font-size: 12px; color: #65676b; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f0f2f5; padding: 10px 12px; text-align: left; font-weight: 600; color: #65676b; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f0f2f5; }
+    tr:hover td { background: #f9fafb; }
+
+    .source-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .source-instagram_dm { background: #fce4ec; color: #c2185b; }
+    .source-whatsapp { background: #e8f5e9; color: #2e7d32; }
+    .source-unknown { background: #f3e5f5; color: #6a1b9a; }
+
+    .status-new { color: #1565c0; font-weight: 600; }
+    .status-contacted { color: #2e7d32; font-weight: 600; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #65676b;
+      font-size: 14px;
+    }
+
+    .setup-steps {
+      background: #e8f0fe;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .setup-steps ol { padding-left: 20px; }
+    .setup-steps code {
+      background: rgba(0,0,0,.08);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    .refresh-btn {
+      float: right;
+      font-size: 12px;
+      padding: 5px 12px;
+      margin-top: -4px;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1c1e21;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📱 İrfmak — Sosyal Medya Paneli</h1>
+  <a href="/admin.html">← Admin</a>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="baglanti">Bağlantı Durumu</button>
+  <button class="tab-btn" data-tab="leadler">CRM Lead'ler</button>
+  <button class="tab-btn" data-tab="mesajlar">Instagram DM'ler</button>
+  <button class="tab-btn" data-tab="kurulum">Kurulum Rehberi</button>
+</div>
+
+<div class="content">
+
+  <!-- BAĞLANTI DURUMU -->
+  <section id="baglanti-tab" class="tab-section active">
+    <div class="status-card">
+      <h2>Meta (Facebook &amp; Instagram) Bağlantısı</h2>
+      <div class="connection-row">
+        <div id="meta-badge" class="badge gray">⏳ Kontrol ediliyor...</div>
+        <div id="meta-detail" class="detail-text"></div>
+        <button class="btn btn-primary" onclick="connectMeta()">Bağlan / Yenile</button>
+        <button class="btn btn-danger" onclick="disconnectMeta()">Bağlantıyı Kes</button>
+      </div>
+    </div>
+
+    <div class="status-card">
+      <h2>Platform Durumları</h2>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="val" id="stat-total-leads">—</div>
+          <div class="lbl">Toplam Lead</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="stat-ig-leads">—</div>
+          <div class="lbl">Instagram DM Lead</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="stat-new-leads">—</div>
+          <div class="lbl">Yeni Lead</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CRM LEADLER -->
+  <section id="leadler-tab" class="tab-section">
+    <div class="status-card">
+      <h2>
+        CRM Lead Listesi
+        <button class="btn btn-secondary refresh-btn" onclick="loadLeads()">↻ Yenile</button>
+      </h2>
+      <div id="leads-table-wrap">
+        <div class="empty-state">Yükleniyor...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTAGRAM DM'LER -->
+  <section id="mesajlar-tab" class="tab-section">
+    <div class="status-card">
+      <h2>
+        Instagram DM Lead'leri
+        <button class="btn btn-secondary refresh-btn" onclick="loadIgMessages()">↻ Yenile</button>
+      </h2>
+      <div id="ig-messages-wrap">
+        <div class="empty-state">Yükleniyor...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KURULUM REHBERİ -->
+  <section id="kurulum-tab" class="tab-section">
+    <div class="status-card">
+      <h2>Meta Developer Kurulum Adımları</h2>
+      <div class="setup-steps">
+        <ol>
+          <li><b>Meta Developer App Oluştur:</b> <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a> → My Apps → Create App</li>
+          <li>App türü: <b>Business</b> seç</li>
+          <li>Facebook Login &amp; Instagram Graph API ürünlerini ekle</li>
+          <li>App Settings → Basic'ten <code>App ID</code> ve <code>App Secret</code> al</li>
+          <li><code>.env</code> dosyasına ekle:<br>
+            <code>META_APP_ID=xxxx</code><br>
+            <code>META_APP_SECRET=xxxx</code><br>
+            <code>META_REDIRECT_URI=https://yourdomain.com/meta/callback</code><br>
+            <code>META_WEBHOOK_VERIFY_TOKEN=irfmak_webhook_2025</code>
+          </li>
+          <li>Facebook Login → Valid OAuth Redirect URIs'e <code>META_REDIRECT_URI</code> değerini ekle</li>
+          <li>Bu paneldeki <b>Bağlan</b> butonuna tıkla → OAuth akışı tamamlanır</li>
+          <li>Webhook: Meta Developer → Webhooks → Instagram → <code>https://yourdomain.com/webhook/instagram</code> ekle<br>
+            Verify token: <code>irfmak_webhook_2025</code></li>
+          <li>Webhook subscription: <b>messages</b> field'ını seç</li>
+          <li>Instagram Business hesabının Facebook sayfasına bağlı olduğundan emin ol</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="status-card">
+      <h2>Supabase CRM Tablosu SQL</h2>
+      <div class="setup-steps">
+        <p style="margin-bottom:8px">Supabase SQL Editor'da çalıştır:</p>
+        <pre style="background:#1c1e21;color:#e8eaed;padding:16px;border-radius:8px;font-size:12px;overflow-x:auto">CREATE TABLE IF NOT EXISTS crm_leads (
+  id UUID PRIMARY KEY,
+  source TEXT,
+  platform_user_id TEXT,
+  customer_name TEXT,
+  customer_phone TEXT,
+  message TEXT,
+  auto_replied BOOLEAN DEFAULT false,
+  keywords_matched TEXT,
+  handoff_reason TEXT,
+  status TEXT DEFAULT 'new',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);</pre>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// Tab navigation
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+
+    if (btn.dataset.tab === 'leadler') loadLeads();
+    if (btn.dataset.tab === 'mesajlar') loadIgMessages();
+  });
+});
+
+async function checkMetaStatus() {
+  try {
+    const res = await fetch('/meta/status');
+    const data = await res.json();
+    const badge = document.getElementById('meta-badge');
+    const detail = document.getElementById('meta-detail');
+
+    if (data.connected) {
+      badge.className = 'badge green';
+      badge.textContent = '✅ Bağlı';
+      detail.innerHTML = `<b>${data.pageName || '—'}</b> &nbsp;|&nbsp; Instagram ID: ${data.instagramAccountId || 'Bağlı değil'} &nbsp;|&nbsp; <small>Bağlantı: ${data.connectedAt ? new Date(data.connectedAt).toLocaleDateString('tr-TR') : '—'}</small>`;
+    } else {
+      badge.className = 'badge red';
+      badge.textContent = '❌ Bağlı Değil';
+      detail.textContent = 'Meta hesabını bağlamak için Bağlan butonuna tıklayın.';
+    }
+  } catch {
+    document.getElementById('meta-badge').textContent = '⚠️ Bağlantı hatası';
+  }
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch('/admin/leads');
+    const leads = await res.json();
+
+    document.getElementById('stat-total-leads').textContent = leads.length;
+    document.getElementById('stat-ig-leads').textContent = leads.filter(l => l.source === 'instagram_dm').length;
+    document.getElementById('stat-new-leads').textContent = leads.filter(l => l.status === 'new').length;
+  } catch {}
+}
+
+async function loadLeads() {
+  const wrap = document.getElementById('leads-table-wrap');
+  wrap.innerHTML = '<div class="empty-state">Yükleniyor...</div>';
+
+  try {
+    const res = await fetch('/admin/leads');
+    const leads = await res.json();
+
+    if (!leads.length) {
+      wrap.innerHTML = '<div class="empty-state">Henüz lead yok.</div>';
+      return;
+    }
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Kaynak</th>
+            <th>Müşteri</th>
+            <th>Telefon</th>
+            <th>Mesaj</th>
+            <th>Anahtar Kelimeler</th>
+            <th>Durum</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${leads.map(l => `
+            <tr>
+              <td>${new Date(l.created_at).toLocaleString('tr-TR')}</td>
+              <td><span class="source-tag source-${l.source}">${l.source}</span></td>
+              <td>${l.customer_name || '—'}</td>
+              <td>${l.customer_phone || '—'}</td>
+              <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(l.message||'').replace(/"/g,'')}">${l.message || '—'}</td>
+              <td><small>${l.keywords_matched || '—'}</small></td>
+              <td class="status-${l.status}">${l.status}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    wrap.innerHTML = `<div class="empty-state">Hata: ${err.message}</div>`;
+  }
+}
+
+async function loadIgMessages() {
+  const wrap = document.getElementById('ig-messages-wrap');
+  wrap.innerHTML = '<div class="empty-state">Yükleniyor...</div>';
+
+  try {
+    const res = await fetch('/admin/leads?source=instagram_dm');
+    const leads = await res.json();
+
+    if (!leads.length) {
+      wrap.innerHTML = '<div class="empty-state">Instagram\'dan henüz DM lead yok.</div>';
+      return;
+    }
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Instagram Kullanıcı ID</th>
+            <th>Mesaj</th>
+            <th>Eşleşen Kelimeler</th>
+            <th>Otomatik Cevap</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${leads.map(l => `
+            <tr>
+              <td>${new Date(l.created_at).toLocaleString('tr-TR')}</td>
+              <td><code style="font-size:11px">${l.platform_user_id || '—'}</code></td>
+              <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(l.message||'').replace(/"/g,'')}">${l.message || '—'}</td>
+              <td><small>${l.keywords_matched || '—'}</small></td>
+              <td>${l.auto_replied ? '✅ Gönderildi' : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    wrap.innerHTML = `<div class="empty-state">Hata: ${err.message}</div>`;
+  }
+}
+
+function connectMeta() {
+  window.open('/meta/auth', '_blank', 'width=600,height=700');
+  setTimeout(() => {
+    checkMetaStatus();
+    loadStats();
+  }, 5000);
+}
+
+async function disconnectMeta() {
+  if (!confirm('Meta bağlantısını kesmek istediğinizden emin misiniz?')) return;
+
+  await fetch('/meta/disconnect', { method: 'POST' });
+  showToast('Meta bağlantısı kesildi');
+  checkMetaStatus();
+}
+
+// İlk yükleme
+checkMetaStatus();
+loadStats();
+</script>
+</body>
+</html>

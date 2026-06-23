@@ -109,9 +109,18 @@ async function generateHeygenAgentVideo(prompt) {
     throw new Error('HeyGen Video Agent video zaman aşımına uğradı.');
   }
 
-  const outputPath = path.join(outputDir, `heygen_agent_video_${Date.now()}.mp4`);
+  const timestamp = Date.now();
+  const outputPath = path.join(outputDir, `heygen_agent_video_${timestamp}.mp4`);
 
   await downloadVideo(videoUrl, outputPath);
+
+  // Video URL'sini metadata olarak kaydet (Instagram yayınlama için gerekli)
+  const metaPath = path.join(outputDir, 'last_video_meta.json');
+  fs.writeFileSync(metaPath, JSON.stringify({
+    videoUrl,
+    localPath: outputPath,
+    generatedAt: new Date().toISOString()
+  }, null, 2));
 
   console.log('✅ HeyGen Agent video indirildi:', outputPath);
 

@@ -8,7 +8,8 @@
     "start": "node index.js",
     "reset": "node reset-data.js",
     "auto": "node auto-daily.js",
-    "youtube": "node auto-run.js"
+    "youtube": "node auto-run.js",
+    "social": "node publish-social.js"
   },
   "keywords": [
     "irfmak",

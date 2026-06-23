@@ -8,6 +8,9 @@ const fs = require("fs");
 const { PRODUCT_CATALOG } = require("./productCatalog");
 const youtubeRouter = require("./youtubeContent");
 const instagramRouter = require("./instagramContent");
+const { router: metaAuthRouter } = require("./metaAuth");
+const instagramWebhookRouter = require("./instagramWebhook");
+const { getLeads } = require("./crmLeads");
 
 dotenv.config();
 
@@ -21,6 +24,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/content/youtube", youtubeRouter);
 app.use("/content/instagram", instagramRouter);
+app.use("/meta", metaAuthRouter);
+app.use("/webhook/instagram", instagramWebhookRouter);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -635,6 +640,16 @@ app.get("/admin/handoffs", (req, res) => {
 
 app.get("/admin/sessions", (req, res) => {
   res.json(sessions);
+});
+
+app.get("/admin/leads", async (req, res) => {
+  try {
+    const source = req.query.source || undefined;
+    const leads = await getLeads({ limit: 200, source });
+    res.json(leads);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post("/chat", async (req, res) => {
